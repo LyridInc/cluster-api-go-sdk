@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -91,4 +92,38 @@ func (c *OpenstackClient) GetProjectQuotas() (*model.QuotasResponse, error) {
 	json.Unmarshal(body, &quotas)
 
 	return &quotas, nil
+}
+
+func (c *OpenstackClient) ValidateQuotas() (bool, error) {
+	quotas, err := c.GetProjectQuotas()
+	if err != nil {
+		return false, err
+	}
+
+	floatingIpQuota := quotas.Quota.FloatingIp
+	if floatingIpQuota.Used >= floatingIpQuota.Limit {
+		return false, fmt.Errorf("floating ip quota limit exceeded")
+	}
+	networkQuota := quotas.Quota.Network
+	if networkQuota.Used >= networkQuota.Limit {
+		return false, fmt.Errorf("network quota limit exceeded")
+	}
+	routerQuota := quotas.Quota.Router
+	if routerQuota.Used >= routerQuota.Limit {
+		return false, fmt.Errorf("router quota limit exceeded")
+	}
+	securityGroupQuota := quotas.Quota.SecurityGroup
+	if securityGroupQuota.Used+2 >= securityGroupQuota.Limit {
+		return false, fmt.Errorf("security group quota limit exceeded")
+	}
+	securityGroupRuleQuota := quotas.Quota.SecurityGroupRule
+	if securityGroupRuleQuota.Used+10 >= securityGroupRuleQuota.Limit {
+		return false, fmt.Errorf("security group rules quota limit exceeded")
+	}
+	portQuota := quotas.Quota.Port
+	if portQuota.Used+3 >= portQuota.Limit {
+		return false, fmt.Errorf("port quota limit exceeded")
+	}
+
+	return true, nil
 }

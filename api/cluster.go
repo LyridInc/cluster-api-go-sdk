@@ -132,7 +132,21 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 	return string(yaml), nil
 }
 
-func (c *ClusterApiClient) Apply(yamlString string) error {
+func (c *ClusterApiClient) GetWorkloadClusterKubeconfig(clusterName string) (*string, error) {
+	opt := client.GetKubeconfigOptions{
+		Kubeconfig:          client.Kubeconfig{Path: c.KubeconfigFile},
+		WorkloadClusterName: clusterName,
+	}
+
+	out, err := c.Client.GetKubeconfig(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &out, err
+}
+
+func (c *ClusterApiClient) ApplyYaml(yamlString string) error {
 	var err error
 	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader([]byte(yamlString)), 100)
 	for {
@@ -141,40 +155,37 @@ func (c *ClusterApiClient) Apply(yamlString string) error {
 			break
 		}
 
-		obj, gvk, err := yamlserializer.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
+		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj)
 		if err != nil {
 			return err
 		}
 
-		unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+		if _, err := (*dri).Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
+			return err
+		}
+	}
+	if err != io.EOF {
+		return err
+	}
+
+	return nil
+}
+
+func (c *ClusterApiClient) DeleteYaml(yamlString string) error {
+	var err error
+	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader([]byte(yamlString)), 100)
+	for {
+		var rawObj runtime.RawExtension
+		if err = decoder.Decode(&rawObj); err != nil {
+			break
+		}
+
+		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj)
 		if err != nil {
 			return err
 		}
 
-		unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
-
-		gr, err := restmapper.GetAPIGroupResources(c.Clientset.Discovery())
-		if err != nil {
-			return err
-		}
-
-		mapper := restmapper.NewDiscoveryRESTMapper(gr)
-		mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-		if err != nil {
-			return err
-		}
-
-		var dri dynamic.ResourceInterface
-		if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-			if unstructuredObj.GetNamespace() == "" {
-				unstructuredObj.SetNamespace("default")
-			}
-			dri = c.DynamicInterface.Resource(mapping.Resource).Namespace(unstructuredObj.GetNamespace())
-		} else {
-			dri = c.DynamicInterface.Resource(mapping.Resource)
-		}
-
-		if _, err := dri.Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
+		if err := (*dri).Delete(context.Background(), unstructuredObj.GetName(), metav1.DeleteOptions{}); err != nil {
 			return err
 		}
 	}
@@ -250,4 +261,41 @@ func (c *ClusterApiClient) InfrastructureReadiness(infrastructure string) (bool,
 	}
 
 	return readiness, nil
+}
+
+func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExtension) (*dynamic.ResourceInterface, *unstructured.Unstructured, error) {
+	obj, gvk, err := yamlserializer.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
+
+	gr, err := restmapper.GetAPIGroupResources(c.Clientset.Discovery())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	mapper := restmapper.NewDiscoveryRESTMapper(gr)
+	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var dri dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		if unstructuredObj.GetNamespace() == "" {
+			unstructuredObj.SetNamespace("default")
+		}
+		dri = c.DynamicInterface.Resource(mapping.Resource).Namespace(unstructuredObj.GetNamespace())
+	} else {
+		dri = c.DynamicInterface.Resource(mapping.Resource)
+	}
+
+	return &dri, unstructuredObj, nil
 }
