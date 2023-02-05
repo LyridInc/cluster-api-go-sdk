@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -132,10 +133,11 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 }
 
 func (c *ClusterApiClient) Apply(yamlString string) error {
+	var err error
 	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader([]byte(yamlString)), 100)
 	for {
 		var rawObj runtime.RawExtension
-		if err := decoder.Decode(&rawObj); err != nil {
+		if err = decoder.Decode(&rawObj); err != nil {
 			break
 		}
 
@@ -175,6 +177,9 @@ func (c *ClusterApiClient) Apply(yamlString string) error {
 		if _, err := dri.Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
 			return err
 		}
+	}
+	if err != io.EOF {
+		return err
 	}
 
 	return nil
@@ -228,8 +233,9 @@ func (c *ClusterApiClient) InfrastructureReadiness(infrastructure string) (bool,
 		return false, err
 	}
 
-	readiness := true
+	readiness := false
 	for _, pod := range pods.Items {
+		readiness = true
 		for _, container := range pod.Status.ContainerStatuses {
 			if !container.Ready {
 				readiness = false

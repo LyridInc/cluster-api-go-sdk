@@ -2,3 +2,6 @@ main.go
 local.kubeconfig
 work.yml
 capi-local.yaml
+
+.vscode
+test.env

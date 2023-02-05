@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/cluster-api v1.3.3
@@ -88,7 +89,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.25.0 // indirect
 	k8s.io/apiextensions-apiserver v0.25.0 // indirect
 	k8s.io/apiserver v0.25.0 // indirect
 	k8s.io/cluster-bootstrap v0.25.0 // indirect

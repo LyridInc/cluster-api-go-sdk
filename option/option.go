@@ -22,6 +22,6 @@ type (
 )
 
 var Namespaces map[string]string = map[string]string{
-	"openstack": "capi-system",
+	"openstack": "capo-system",
 	"oci":       "capoci-system",
 }
