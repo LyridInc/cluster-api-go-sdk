@@ -48,7 +48,7 @@ func (y *CloudsYaml) Parse(yamlByte []byte) error {
 func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptions) {
 
 	cloud := "openstack"
-	openstackConf := `[Global]\n`
+	openstackConf := "[Global]\n"
 
 	// set env.rc variables
 	if authUrl, ok := y.Clouds.Openstack.Auth["auth_url"]; ok {

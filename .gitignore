@@ -1,10 +1,4 @@
 main.go
-local.kubeconfig
-work.yml
-clouds.yaml
-capi-local.yaml
-capi-local-flannel.yaml
-capi-local-3.yaml
-
 .vscode
-test.env
+
+test/data/*

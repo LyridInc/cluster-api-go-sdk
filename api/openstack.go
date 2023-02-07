@@ -174,7 +174,7 @@ func (c *OpenstackClient) ValidateQuotas() (bool, error) {
 	return true, nil
 }
 
-func (c *OpenstackClient) UpdateClusterYamlManifestFlannel(yamlString string, opt option.ManifestSpecOption) (string, error) {
+func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.ManifestOption) (string, error) {
 	var (
 		err        error
 		yamlResult string
@@ -212,6 +212,24 @@ func (c *OpenstackClient) UpdateClusterYamlManifestFlannel(yamlString string, op
 				json.Unmarshal(specByte, &clusterSpec)
 				clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
 				unstructuredObj.Object["spec"] = clusterSpec
+			}
+		} else {
+			unstructuredObjByte, _ := json.Marshal(unstructuredObj.Object)
+			kindMap := map[string]interface{}{}
+			if strings.HasPrefix(apiVersion, "storage.k8s.io") && kind == "StorageClass" {
+				storageClass := yamlmodel.StorageClass{}
+				json.Unmarshal(unstructuredObjByte, &storageClass)
+				storageClass.Parameters = opt.StorageClassKindOption.Parameters
+				b, _ := json.Marshal(storageClass)
+				json.Unmarshal(b, &kindMap)
+				unstructuredObj.Object = kindMap
+			} else if kind == "Secret" {
+				secret := yamlmodel.Secret{}
+				json.Unmarshal(unstructuredObjByte, &secret)
+				secret.Data = opt.SecretKindOption.Data
+				b, _ := json.Marshal(secret)
+				json.Unmarshal(b, &kindMap)
+				unstructuredObj.Object = kindMap
 			}
 		}
 

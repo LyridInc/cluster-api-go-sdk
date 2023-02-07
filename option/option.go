@@ -28,9 +28,19 @@ type (
 		AllowAllInClusterTraffic bool
 	}
 
-	ManifestSpecOption struct {
+	StorageClassKindOption struct {
+		Parameters map[string]interface{}
+	}
+
+	SecretKindOption struct {
+		Data map[string]interface{}
+	}
+
+	ManifestOption struct {
 		ClusterKindSpecOption        ClusterKindSpecOption
 		InfrastructureKindSpecOption InfrastructureKindSpecOption
+		StorageClassKindOption       StorageClassKindOption
+		SecretKindOption             SecretKindOption
 	}
 )
 
@@ -47,4 +57,7 @@ var OPENSTACK_CLOUD_CONTROLLER_MANIFEST_URLS = []string{
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml",
 }
 
-var OPENSTACK_CINDER_MANIFEST_URLS = []string{}
+var OPENSTACK_CINDER_MANIFEST_URLS = map[string]string{
+	"block":  "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/examples/cinder-csi-plugin/block/block.yaml",
+	"secret": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/csi-secret-cinderplugin.yaml",
+}
