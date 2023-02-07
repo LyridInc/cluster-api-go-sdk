@@ -299,3 +299,16 @@ func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExte
 
 	return &dri, unstructuredObj, nil
 }
+
+func (c *ClusterApiClient) CreateSecret(secretName string) {
+	secret := v1.Secret{}
+	c.Clientset.CoreV1().Secrets("kube-system").Create(context.TODO(), &secret, metav1.CreateOptions{})
+}
+
+// NEXT TODO:
+// edit cluster yaml manifest: add cidrBlock and allowAllinClusterTraffic -> openstack
+// implement CNI Flannel -> openstack
+// implement kubectl apply with kubeconfig flag -> cluster api (solution: change kubeconfig file on Clientset object)
+// edit cloud.conf value in csi-secret-cinderplugin.yaml -> openstack
+// implement kubectl create -> cluster api (https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/create/create_secret.go)
+// edit storage yaml manifest: change availability value -> clusterapi -> openstack

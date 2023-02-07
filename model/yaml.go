@@ -3,6 +3,8 @@ package model
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 
 	"github.com/LyridInc/cluster-api-go-sdk/option"
@@ -146,4 +148,25 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 	if options.FailureDomain != "" {
 		os.Setenv("OPENSTACK_FAILURE_DOMAIN", options.FailureDomain)
 	}
+}
+
+func ReadYamlFromUrl(url string) (string, error) {
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }

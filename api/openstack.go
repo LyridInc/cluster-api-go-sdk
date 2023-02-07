@@ -7,8 +7,16 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/LyridInc/cluster-api-go-sdk/model"
+	"github.com/LyridInc/cluster-api-go-sdk/option"
+	yamlmodel "github.com/LyridInc/cluster-api-go-sdk/yaml"
+	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	yamlserializer "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 type (
@@ -30,7 +38,22 @@ func (c *OpenstackClient) Authenticate(credential OpenstackCredential) error {
 	token := os.Getenv("OS_TOKEN")
 	if token != "" {
 		c.AuthToken = token
-		return nil
+		response, err := c.CheckAuthToken()
+		if err != nil {
+			return err
+		}
+		responseError, ok := response["error"]
+		if !ok {
+			return nil
+		}
+		responseErrorMap := responseError.(map[string]interface{})
+		code, ok := responseErrorMap["code"]
+		if ok {
+			statusCode := code.(float64)
+			if statusCode != 401 {
+				return fmt.Errorf("%v", responseError)
+			}
+		}
 	}
 
 	url := c.AuthEndpoint + "/v3/auth/tokens"
@@ -68,6 +91,29 @@ func (c *OpenstackClient) Authenticate(credential OpenstackCredential) error {
 	}
 
 	return nil
+}
+
+func (c *OpenstackClient) CheckAuthToken() (map[string]interface{}, error) {
+	url := c.AuthEndpoint + "/v3/auth/tokens"
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	jsonResponse := map[string]interface{}{}
+	body, _ := io.ReadAll(response.Body)
+	json.Unmarshal(body, &jsonResponse)
+
+	return jsonResponse, nil
 }
 
 func (c *OpenstackClient) GetProjectQuotas() (*model.QuotasResponse, error) {
@@ -126,4 +172,56 @@ func (c *OpenstackClient) ValidateQuotas() (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (c *OpenstackClient) UpdateClusterYamlManifestFlannel(yamlString string, opt option.ManifestSpecOption) (string, error) {
+	var (
+		err        error
+		yamlResult string
+	)
+	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader([]byte(yamlString)), 100)
+	for {
+		var rawObj runtime.RawExtension
+		if err = decoder.Decode(&rawObj); err != nil {
+			break
+		}
+
+		obj, _, err := yamlserializer.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
+		if err != nil {
+			return "", err
+		}
+
+		unstructuredMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+		if err != nil {
+			return "", err
+		}
+
+		unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
+
+		apiVersion := unstructuredObj.GetAPIVersion()
+		kind := unstructuredObj.GetKind()
+		if spec, ok := unstructuredObj.Object["spec"]; ok {
+			specByte, _ := json.Marshal(spec)
+			if strings.HasPrefix(apiVersion, "infrastructure.cluster.x-k8s.io") && kind == "OpenStackCluster" {
+				infrastructureSpec := yamlmodel.InfrastructureSpec{}
+				json.Unmarshal(specByte, &infrastructureSpec)
+				infrastructureSpec.AllowAllInClusterTraffic = opt.InfrastructureKindSpecOption.AllowAllInClusterTraffic
+				unstructuredObj.Object["spec"] = infrastructureSpec
+			} else if strings.HasPrefix(apiVersion, "cluster.x-k8s.io") && kind == "Cluster" {
+				clusterSpec := yamlmodel.ClusterSpec{}
+				json.Unmarshal(specByte, &clusterSpec)
+				clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
+				unstructuredObj.Object["spec"] = clusterSpec
+			}
+		}
+
+		x, _ := yaml.Marshal(unstructuredObj.Object)
+		yamlResult = yamlResult + "---\n" + string(x)
+	}
+
+	if err != io.EOF {
+		return "", err
+	}
+
+	return yamlResult, nil
 }
