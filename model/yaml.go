@@ -48,81 +48,93 @@ func (y *CloudsYaml) Parse(yamlByte []byte) error {
 func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptions) {
 
 	cloud := "openstack"
+	cloudOs := y.Clouds.Openstack
+	authOs := cloudOs.Auth
 	openstackConf := "[Global]\n"
 
 	// set env.rc variables
-	if authUrl, ok := y.Clouds.Openstack.Auth["auth_url"]; ok {
+	if authUrl, ok := authOs["auth_url"]; ok {
 		os.Setenv("CAPO_AUTH_URL", authUrl.(string))
 		openstackConf = openstackConf + `auth-url="` + authUrl.(string) + "\"\n"
 	}
-	if username, ok := y.Clouds.Openstack.Auth["username"]; ok {
+	if username, ok := authOs["username"]; ok {
 		os.Setenv("CAPO_USERNAME", username.(string))
 		openstackConf = openstackConf + `username="` + username.(string) + "\"\n"
 	}
-	if password, ok := y.Clouds.Openstack.Auth["password"]; ok {
+	if password, ok := authOs["password"]; ok {
 		os.Setenv("CAPO_PASSWORD", password.(string))
 		openstackConf = openstackConf + `password="` + password.(string) + "\"\n"
 	}
-	if region, ok := y.Clouds.Openstack.Auth["region"]; ok {
+	if region, ok := authOs["region"]; ok {
 		os.Setenv("CAPO_REGION", region.(string))
 		openstackConf = openstackConf + `region="` + region.(string) + "\"\n"
 	}
-	if projectId, ok := y.Clouds.Openstack.Auth["project_id"]; ok {
+	if projectId, ok := authOs["project_id"]; ok {
 		os.Setenv("CAPO_PROJECT_ID", projectId.(string))
 		openstackConf = openstackConf + `tenant-id="` + projectId.(string) + "\"\n"
 	}
-	if projectName, ok := y.Clouds.Openstack.Auth["project_name"]; ok {
+	if projectName, ok := authOs["project_name"]; ok {
 		os.Setenv("CAPO_PROJECT_NAME", projectName.(string))
 		openstackConf = openstackConf + `tenant-name="` + projectName.(string) + "\"\n"
 	}
-	if domainName, ok := y.Clouds.Openstack.Auth["user_domain_name"]; ok {
+	if domainName, ok := authOs["user_domain_name"]; ok {
 		os.Setenv("CAPO_DOMAIN_NAME", domainName.(string))
 		openstackConf = openstackConf + `domain-name="` + domainName.(string) + "\"\n"
 	}
 
-	caCertB64 := base64.StdEncoding.EncodeToString([]byte(y.Clouds.Openstack.CaCert + "\n"))
+	caCertB64 := base64.StdEncoding.EncodeToString([]byte(cloudOs.CaCert + "\n"))
 	os.Setenv("OPENSTACK_CLOUD_CACERT_B64", caCertB64)
-	if y.Clouds.Openstack.CaCert != "" {
+	if cloudOs.CaCert != "" {
 		openstackConf = openstackConf + `ca-file="/etc/certs/cacert"` + "\n"
 	}
 
-	if applicationCredentialName, ok := y.Clouds.Openstack.Auth["application_credential_name"]; ok {
+	if applicationCredentialName, ok := authOs["application_credential_name"]; ok {
 		os.Setenv("CAPO_APPLICATION_CREDENTIAL_NAME", applicationCredentialName.(string))
 		openstackConf = openstackConf + `application-credential-name="` + applicationCredentialName.(string) + "\"\n"
 	}
-	if applicationCredentialId, ok := y.Clouds.Openstack.Auth["application_credential_id"]; ok {
+	if applicationCredentialId, ok := authOs["application_credential_id"]; ok {
 		os.Setenv("CAPO_APPLICATION_CREDENTIAL_ID", applicationCredentialId.(string))
 		openstackConf = openstackConf + `application-credential-id="` + applicationCredentialId.(string) + "\"\n"
 	}
-	if applicationCredentialSecret, ok := y.Clouds.Openstack.Auth["application_credential_secret"]; ok {
+	if applicationCredentialSecret, ok := authOs["application_credential_secret"]; ok {
 		os.Setenv("CAPO_APPLICATION_CREDENTIAL_SECRET", applicationCredentialSecret.(string))
 		openstackConf = openstackConf + `application-credential-secret="` + applicationCredentialSecret.(string) + "\"\n"
 	}
-	if y.Clouds.Openstack.LbMethod != "" {
-		os.Setenv("CAPO_LB_METHOD", y.Clouds.Openstack.LbMethod)
-		openstackConf = openstackConf + `lb-method="` + y.Clouds.Openstack.LbMethod + "\"\n"
+
+	if cloudOs.LbMethod != "" ||
+		cloudOs.CreateMonitor ||
+		cloudOs.MonitorDelay != "" ||
+		cloudOs.MonitorMaxRetries != 0 ||
+		cloudOs.MonitorTimeout != "" {
+		openstackConf = openstackConf + "\n[LoadBalancer]\n"
 	}
-	if y.Clouds.Openstack.CreateMonitor {
-		os.Setenv("CAPO_CREATE_MONITOR", fmt.Sprint(y.Clouds.Openstack.CreateMonitor))
-		openstackConf = openstackConf + `create-monitor="` + fmt.Sprint(y.Clouds.Openstack.CreateMonitor) + "\"\n"
+
+	if cloudOs.LbMethod != "" {
+		os.Setenv("CAPO_LB_METHOD", cloudOs.LbMethod)
+		openstackConf = openstackConf + `lb-method="` + cloudOs.LbMethod + "\"\n"
 	}
-	if y.Clouds.Openstack.MonitorDelay != "" {
-		os.Setenv("CAPO_MONITOR_DELAY", y.Clouds.Openstack.MonitorDelay)
-		openstackConf = openstackConf + `monitor-delay="` + y.Clouds.Openstack.MonitorDelay + "\"\n"
+	if cloudOs.CreateMonitor {
+		os.Setenv("CAPO_CREATE_MONITOR", fmt.Sprint(cloudOs.CreateMonitor))
+		openstackConf = openstackConf + `create-monitor="` + fmt.Sprint(cloudOs.CreateMonitor) + "\"\n"
 	}
-	if y.Clouds.Openstack.MonitorMaxRetries != 0 {
-		os.Setenv("CAPO_MONITOR_MAX_RETRIES", fmt.Sprint(y.Clouds.Openstack.MonitorMaxRetries))
-		openstackConf = openstackConf + `monitor-max-retries="` + fmt.Sprint(y.Clouds.Openstack.MonitorMaxRetries) + "\"\n"
+	if cloudOs.MonitorDelay != "" {
+		os.Setenv("CAPO_MONITOR_DELAY", cloudOs.MonitorDelay)
+		openstackConf = openstackConf + `monitor-delay="` + cloudOs.MonitorDelay + "\"\n"
 	}
-	if y.Clouds.Openstack.MonitorTimeout != "" {
-		os.Setenv("CAPO_MONITOR_TIMEOUT", y.Clouds.Openstack.MonitorTimeout)
-		openstackConf = openstackConf + `monitor-timeout="` + y.Clouds.Openstack.MonitorTimeout + "\"\n"
+	if cloudOs.MonitorMaxRetries != 0 {
+		os.Setenv("CAPO_MONITOR_MAX_RETRIES", fmt.Sprint(cloudOs.MonitorMaxRetries))
+		openstackConf = openstackConf + `monitor-max-retries="` + fmt.Sprint(cloudOs.MonitorMaxRetries) + "\"\n"
+	}
+	if cloudOs.MonitorTimeout != "" {
+		os.Setenv("CAPO_MONITOR_TIMEOUT", cloudOs.MonitorTimeout)
+		openstackConf = openstackConf + `monitor-timeout="` + cloudOs.MonitorTimeout + "\"\n"
 	}
 
 	openstackConfB64 := base64.StdEncoding.EncodeToString([]byte(openstackConf))
 	cloudYamlB64 := base64.StdEncoding.EncodeToString([]byte(yamlContent))
 
 	os.Setenv("OPENSTACK_CLOUD", cloud)
+	os.Setenv("OPENSTACK_CLOUD_PROVIDER_CONF", openstackConf)
 	os.Setenv("OPENSTACK_CLOUD_PROVIDER_CONF_B64", openstackConfB64)
 	os.Setenv("OPENSTACK_CLOUD_YAML_B64", cloudYamlB64)
 

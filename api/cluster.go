@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/LyridInc/cluster-api-go-sdk/option"
+	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,6 +67,28 @@ func NewClusterApiClient(configFile, kubeconfigFile string) *ClusterApiClient {
 		ConfigFile:       configFile,
 		KubeconfigFile:   kubeconfigFile,
 	}
+}
+
+func (c *ClusterApiClient) SetKubernetesClientset(kubeconfigFile string) error {
+	conf, err := clientcmd.BuildConfigFromFlags("", kubeconfigFile)
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(conf)
+	if err != nil {
+		return err
+	}
+
+	dd, err := dynamic.NewForConfig(conf)
+	if err != nil {
+		log.Fatal("Dynamic interface config error:", err)
+		return nil
+	}
+
+	c.Clientset = clientset
+	c.DynamicInterface = dd
+	return nil
 }
 
 func (c *ClusterApiClient) InitInfrastructure(infrastructure string) ([]client.Components, error) {
@@ -155,9 +178,12 @@ func (c *ClusterApiClient) ApplyYaml(yamlString string) error {
 			break
 		}
 
-		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj)
+		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj, "apply")
 		if err != nil {
 			return err
+		}
+		if dri == nil {
+			continue
 		}
 
 		if _, err := (*dri).Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
@@ -180,9 +206,12 @@ func (c *ClusterApiClient) DeleteYaml(yamlString string) error {
 			break
 		}
 
-		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj)
+		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj, "delete")
 		if err != nil {
 			return err
+		}
+		if dri == nil {
+			continue
 		}
 
 		if err := (*dri).Delete(context.Background(), unstructuredObj.GetName(), metav1.DeleteOptions{}); err != nil {
@@ -263,7 +292,7 @@ func (c *ClusterApiClient) InfrastructureReadiness(infrastructure string) (bool,
 	return readiness, nil
 }
 
-func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExtension) (*dynamic.ResourceInterface, *unstructured.Unstructured, error) {
+func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExtension, action string) (*dynamic.ResourceInterface, *unstructured.Unstructured, error) {
 	obj, gvk, err := yamlserializer.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(rawObj.Raw, nil, nil)
 	if err != nil {
 		return nil, nil, err
@@ -287,6 +316,25 @@ func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExte
 		return nil, nil, err
 	}
 
+	if mapping.Resource.Resource == "lists" {
+		if items, ok := unstructuredObj.Object["items"]; ok {
+			mapItems := items.([]interface{})
+			yamlResult := ""
+			var err error
+			for _, item := range mapItems {
+				b, _ := yaml.Marshal(item)
+				yamlResult = yamlResult + "---\n" + string(b)
+			}
+			switch action {
+			case "apply":
+				err = c.ApplyYaml(yamlResult)
+			case "delete":
+				err = c.DeleteYaml(yamlResult)
+			}
+			return nil, nil, err
+		}
+	}
+
 	var dri dynamic.ResourceInterface
 	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
 		if unstructuredObj.GetNamespace() == "" {
@@ -300,15 +348,19 @@ func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExte
 	return &dri, unstructuredObj, nil
 }
 
-func (c *ClusterApiClient) CreateSecret(secretName string) {
-	secret := v1.Secret{}
-	c.Clientset.CoreV1().Secrets("kube-system").Create(context.TODO(), &secret, metav1.CreateOptions{})
+func (c *ClusterApiClient) CreateSecret(secret v1.Secret) (*v1.Secret, error) {
+	secretValue, err := c.Clientset.CoreV1().Secrets(secret.ObjectMeta.Namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return secretValue, nil
 }
 
 // NEXT TODO:
 // edit cluster yaml manifest: add cidrBlock and allowAllinClusterTraffic -> openstack (o)
 // implement CNI Flannel -> openstack
 // implement kubectl apply with kubeconfig flag -> cluster api (solution: change kubeconfig file on Clientset object)
-// edit cloud.conf value in csi-secret-cinderplugin.yaml -> openstack
-// implement kubectl create -> cluster api (https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/create/create_secret.go)
+// edit cloud.conf value in csi-secret-cinderplugin.yaml -> openstack (o)
+// implement kubectl create -> cluster api (https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/create/create_secret.go) (o)
 // edit storage yaml manifest: change availability value -> clusterapi -> openstack (o)

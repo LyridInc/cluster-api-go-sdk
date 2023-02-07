@@ -149,3 +149,37 @@ func TestUpdateYamlManifest(t *testing.T) {
 		}
 	})
 }
+
+// go test ./test -v -run ^TestDeployCniFlannel$
+func TestDeployCniFlannel(t *testing.T) {
+	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	if err := capi.SetKubernetesClientset("./data/capi-local-3.kubeconfig"); err != nil {
+		t.Fatal("Error set kubeconfig:", error.Error(err))
+	}
+
+	// kubectl --kubeconfig=C:/Users/Lyrid/Documents/Projects/cluster-api-sdk/test/data/capi-local-3.kubeconfig delete -f ./test/data/cloud-controller-manager-roles.yaml
+
+	t.Run("apply flannel cni", func(t *testing.T) {
+		yaml, err := model.ReadYamlFromUrl(option.FLANNEL_MANIFEST_URL)
+		if err != nil {
+			t.Fatal(error.Error(err))
+		}
+
+		if err := capi.ApplyYaml(yaml); err != nil {
+			t.Fatal("Error apply flannel cni yaml:", error.Error(err))
+		}
+	})
+
+	t.Run("apply controller manager", func(t *testing.T) {
+		for _, url := range option.OPENSTACK_CLOUD_CONTROLLER_MANIFEST_URLS {
+			yaml, err := model.ReadYamlFromUrl(url)
+			if err != nil {
+				t.Fatal(error.Error(err))
+			}
+
+			if err := capi.ApplyYaml(yaml); err != nil {
+				t.Fatal("Error apply flannel cni yaml:", url, " - ", error.Error(err))
+			}
+		}
+	})
+}
