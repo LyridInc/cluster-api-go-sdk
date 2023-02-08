@@ -34,7 +34,7 @@ func TestUnavailableInfrastructureReadiness(t *testing.T) {
 func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	t.Run("cluster exists", func(t *testing.T) {
-		clusterName := "capi-local-3"
+		clusterName := "capi-local-2"
 		conf, err := capi.GetWorkloadClusterKubeconfig(clusterName)
 		if err != nil {
 			t.Fatalf(error.Error(err))
@@ -44,7 +44,7 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 		}
 	})
 	t.Run("cluster doesn't exist", func(t *testing.T) {
-		_, err := capi.GetWorkloadClusterKubeconfig("capi-local-99")
+		_, err := capi.GetWorkloadClusterKubeconfig("capi-local")
 		if err != nil {
 			t.Fatalf(error.Error(err))
 		}
@@ -97,17 +97,17 @@ func TestCreateSecret(t *testing.T) {
 		ImageName:                 "ubuntu-2004-kube-v1.24.8",
 		SshKeyName:                "kube-key",
 		DnsNameServers:            "8.8.8.8",
-		FailureDomain:             "az-01",
+		FailureDomain:             "az-01", // nova/az-01
 	}
 	cloudsYaml.SetEnvironment(opt)
 
-	cloudConf := os.Getenv("OPENSTACK_CLOUD_PROVIDER_CONF")
+	cloudConf := os.Getenv("OPENSTACK_CLOUD_PROVIDER_CONF_B64")
 	if cloudConf == "" {
-		t.Fatal("Error reading cloud conf: OPENSTACK_CLOUD_PROVIDER_CONF is not set")
+		t.Fatal("Error reading cloud conf: OPENSTACK_CLOUD_PROVIDER_CONF_B64 is not set")
 	}
 
 	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
-	if err := capi.SetKubernetesClientset("./data/capi-local-3.kubeconfig"); err != nil {
+	if err := capi.SetKubernetesClientset("./data/capi-local-2.kubeconfig"); err != nil {
 		t.Fatal("Error set kubeconfig:", error.Error(err))
 	}
 
@@ -115,7 +115,7 @@ func TestCreateSecret(t *testing.T) {
 	//  kube-system   cloud-config   Opaque   1      19s
 
 	// {"cloud-2.conf": "base64string"}
-	// kubectl get secret -n kube-system --kubeconfig=/mnt/c/Users/Lyrid/Documents/Projects/cluster-api-sdk/test/data/capi-local-2.kubeconfig cloud-config -o jsonpath="{.data.cloud\.conf}" | base64 --decode
+	// kubectl get secret -n kube-system --kubeconfig=/mnt/c/Users/Lyrid/Documents/Projects/cluster-api-sdk/test/data/capi-local-3.kubeconfig cloud-config -o jsonpath="{.data.cloud\.conf}" | base64 --decode
 	// kubectl get pods -A --kubeconfig=/mnt/c/Users/Lyrid/Documents/Projects/cluster-api-sdk/test/data/capi-local-2.kubeconfig
 	// kubectl --kubeconfig=./${CLUSTER_NAME}.kubeconfig create secret -n kube-system generic cloud-config --from-file=/tmp/cloud.conf
 	secret := v1.Secret{

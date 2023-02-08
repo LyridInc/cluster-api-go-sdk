@@ -210,7 +210,9 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 			} else if strings.HasPrefix(apiVersion, "cluster.x-k8s.io") && kind == "Cluster" {
 				clusterSpec := yamlmodel.ClusterSpec{}
 				json.Unmarshal(specByte, &clusterSpec)
-				clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
+				if opt.ClusterKindSpecOption.CidrBlocks != nil {
+					clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
+				}
 				unstructuredObj.Object["spec"] = clusterSpec
 			}
 		} else {
@@ -219,14 +221,18 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 			if strings.HasPrefix(apiVersion, "storage.k8s.io") && kind == "StorageClass" {
 				storageClass := yamlmodel.StorageClass{}
 				json.Unmarshal(unstructuredObjByte, &storageClass)
-				storageClass.Parameters = opt.StorageClassKindOption.Parameters
+				if opt.StorageClassKindOption.Parameters != nil {
+					storageClass.Parameters = opt.StorageClassKindOption.Parameters
+				}
 				b, _ := json.Marshal(storageClass)
 				json.Unmarshal(b, &kindMap)
 				unstructuredObj.Object = kindMap
 			} else if kind == "Secret" {
 				secret := yamlmodel.Secret{}
 				json.Unmarshal(unstructuredObjByte, &secret)
-				secret.Data = opt.SecretKindOption.Data
+				if opt.SecretKindOption.Data != nil {
+					secret.Data = opt.SecretKindOption.Data
+				}
 				b, _ := json.Marshal(secret)
 				json.Unmarshal(b, &kindMap)
 				unstructuredObj.Object = kindMap

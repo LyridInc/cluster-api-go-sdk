@@ -9,6 +9,7 @@ type (
 		SshKeyName                string
 		DnsNameServers            string
 		FailureDomain             string
+		IgnoreVolumeAZ            bool
 	}
 
 	GenerateWorkloadClusterOptions struct {
@@ -54,10 +55,20 @@ const FLANNEL_MANIFEST_URL = "https://raw.githubusercontent.com/flannel-io/flann
 var OPENSTACK_CLOUD_CONTROLLER_MANIFEST_URLS = []string{
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-roles.yaml",
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-role-bindings.yaml",
-	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml",
+	// "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml",
 }
 
-var OPENSTACK_CINDER_MANIFEST_URLS = map[string]string{
-	"block":  "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/examples/cinder-csi-plugin/block/block.yaml",
+var OPENSTACK_CINDER_DRIVER_MANIFEST_URLS = map[string]interface{}{
 	"secret": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/csi-secret-cinderplugin.yaml",
+	"plugins": []string{
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/csi-cinder-driver.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml",
+		// "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin-rbac.yaml",
+		// "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml",
+	},
+}
+
+var OPENSTACK_CINDER_STORAGE_URLS = map[string]string{
+	"block": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/examples/cinder-csi-plugin/block/block.yaml",
 }

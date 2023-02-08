@@ -356,11 +356,3 @@ func (c *ClusterApiClient) CreateSecret(secret v1.Secret) (*v1.Secret, error) {
 
 	return secretValue, nil
 }
-
-// NEXT TODO:
-// edit cluster yaml manifest: add cidrBlock and allowAllinClusterTraffic -> openstack (o)
-// implement CNI Flannel -> openstack
-// implement kubectl apply with kubeconfig flag -> cluster api (solution: change kubeconfig file on Clientset object)
-// edit cloud.conf value in csi-secret-cinderplugin.yaml -> openstack (o)
-// implement kubectl create -> cluster api (https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/create/create_secret.go) (o)
-// edit storage yaml manifest: change availability value -> clusterapi -> openstack (o)

@@ -130,6 +130,11 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 		openstackConf = openstackConf + `monitor-timeout="` + cloudOs.MonitorTimeout + "\"\n"
 	}
 
+	if options.IgnoreVolumeAZ {
+		openstackConf = openstackConf + "\n[BlockStorage]\n"
+		openstackConf = openstackConf + "ignore-volume-az=true\n"
+	}
+
 	openstackConfB64 := base64.StdEncoding.EncodeToString([]byte(openstackConf))
 	cloudYamlB64 := base64.StdEncoding.EncodeToString([]byte(yamlContent))
 
