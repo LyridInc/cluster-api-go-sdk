@@ -14,19 +14,49 @@ import (
 
 // export $(< test.env)
 
-func TestInfrastructureReadiness(t *testing.T) {
-	capi := api.NewClusterApiClient("", "../local.kubeconfig")
-	_, err := capi.InfrastructureReadiness("openstack")
-	if err != nil {
-		t.Fatalf(error.Error(err))
+// go test ./test -v -run ^TestGenerateClusterTemplate$
+func TestGenerateClusterTemplate(t *testing.T) {
+	yamlByte, _ := os.ReadFile("./data/clouds.yaml")
+	cloudsYaml := model.CloudsYaml{}
+	cloudsYaml.Parse(yamlByte)
+	opt := option.OpenstackGenerateClusterOptions{
+		ControlPlaneMachineFlavor: "SS2.2",
+		NodeMachineFlavor:         "SM8.4",
+		ExternalNetworkId:         "79241ddc-c51b-4677-a763-f48c60870923",
+		ImageName:                 "ubuntu-2004-kube-v1.24.8",
+		SshKeyName:                "kube-key",
+		DnsNameServers:            "8.8.8.8",
+		FailureDomain:             "az-01", // nova/az-01
+		IgnoreVolumeAZ:            true,
 	}
-}
+	cloudsYaml.SetEnvironment(opt)
 
-func TestUnavailableInfrastructureReadiness(t *testing.T) {
-	capi := api.NewClusterApiClient("", "../local.kubeconfig")
-	_, err := capi.InfrastructureReadiness("oci")
+	infrastructure := "openstack"
+	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+
+	clusterName := "capi-local-test"
+	ready, err := capi.InfrastructureReadiness(infrastructure)
+	if !ready && err == nil {
+		t.Log("initialize infrastructure")
+		capi.InitInfrastructure(infrastructure)
+	}
+
+	t.Log("Generate workload cluster YAML")
+	clusterOpt := option.GenerateWorkloadClusterOptions{
+		ClusterName:              clusterName,
+		KubernetesVersion:        "v1.24.8",
+		WorkerMachineCount:       3,
+		ControlPlaneMachineCount: 1,
+		InfrastructureProvider:   infrastructure,
+		Flavor:                   "external-cloud-provider",
+	}
+	yaml, err := capi.GenerateWorkloadClusterYaml(clusterOpt)
 	if err != nil {
-		t.Fatalf(error.Error(err))
+		t.Fatal("Generate workload cluster error:", err)
+	}
+
+	if err := os.WriteFile(fmt.Sprintf("./data/%s.yaml", clusterName), []byte(yaml), 0644); err != nil {
+		t.Fatal("Write yaml error:", err)
 	}
 }
 
