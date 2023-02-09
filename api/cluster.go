@@ -69,6 +69,28 @@ func NewClusterApiClient(configFile, kubeconfigFile string) *ClusterApiClient {
 	}
 }
 
+func (c *ClusterApiClient) SetKubernetesClientsetFromConfigBytes(configBytes []byte) error {
+	conf, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(conf)
+	if err != nil {
+		return err
+	}
+
+	dd, err := dynamic.NewForConfig(conf)
+	if err != nil {
+		log.Fatal("Dynamic interface config error:", err)
+		return nil
+	}
+
+	c.Clientset = clientset
+	c.DynamicInterface = dd
+	return nil
+}
+
 func (c *ClusterApiClient) SetKubernetesClientset(kubeconfigFile string) error {
 	conf, err := clientcmd.BuildConfigFromFlags("", kubeconfigFile)
 	if err != nil {

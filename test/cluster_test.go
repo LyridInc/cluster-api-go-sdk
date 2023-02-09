@@ -81,6 +81,39 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 	})
 }
 
+// go test ./test -v -run ^TestSetClientsetFromConfigBytes$
+func TestSetClientsetFromConfigBytes(t *testing.T) {
+	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	clusterName := "capi-local-2"
+	conf, err := capi.GetWorkloadClusterKubeconfig(clusterName)
+	if err != nil {
+		t.Fatalf(error.Error(err))
+	}
+	if err := os.WriteFile(fmt.Sprintf("./data/%s.kubeconfig", clusterName), []byte(*conf), 0644); err != nil {
+		t.Fatal("Write kubeconfig error:", err)
+	}
+
+	capi.SetKubernetesClientsetFromConfigBytes([]byte(*conf))
+
+	secret := v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-secret",
+			Namespace: "kube-system",
+		},
+		Data: map[string][]byte{
+			"key": []byte("test secret"),
+		},
+	}
+
+	if _, err := capi.CreateSecret(secret); err != nil {
+		t.Fatal("Error create secret:", error.Error(err))
+	}
+}
+
 // go test ./test -v -run ^TestKubectlManifest$
 func TestKubectlManifest(t *testing.T) {
 	capi := api.NewClusterApiClient("", "../local.kubeconfig")
