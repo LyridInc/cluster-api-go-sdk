@@ -13,18 +13,28 @@ import (
 
 type (
 	Openstack struct {
-		Auth               map[string]interface{} `yaml:"auth" json:"auth"`
-		Regions            []string               `yaml:"regions" json:"regions"`
-		Interface          string                 `yaml:"interface" json:"interface"`
-		IdentityApiVersion int                    `yaml:"identity_api_version" json:"identity_api_version"`
-		RegionName         string                 `yaml:"region_name" json:"region_name"`
-		Verify             bool                   `yaml:"verify" json:"verify"`
-		LbMethod           string                 `yaml:"lb_method" json:"lb_method"`
-		CreateMonitor      bool                   `yaml:"create_monitor" json:"create_monitor"`
-		MonitorDelay       string                 `yaml:"monitor_delay" json:"monitor_delay"`
-		MonitorMaxRetries  int                    `yaml:"monitor_max_retries" json:"monitor_max_retries"`
-		MonitorTimeout     string                 `yaml:"monitor_timeout" json:"monitor_timeout"`
-		CaCert             string                 `yaml:"cacert" json:"cacert"`
+		Auth               OpenstackAuth `yaml:"auth" json:"auth"`
+		Regions            []string      `yaml:"regions" json:"regions"`
+		Interface          string        `yaml:"interface" json:"interface"`
+		IdentityApiVersion int           `yaml:"identity_api_version" json:"identity_api_version"`
+		RegionName         string        `yaml:"region_name" json:"region_name"`
+		Verify             bool          `yaml:"verify" json:"verify"`
+		LbMethod           string        `yaml:"lb_method" json:"lb_method"`
+		CreateMonitor      bool          `yaml:"create_monitor" json:"create_monitor"`
+		MonitorDelay       string        `yaml:"monitor_delay" json:"monitor_delay"`
+		MonitorMaxRetries  int           `yaml:"monitor_max_retries" json:"monitor_max_retries"`
+		MonitorTimeout     string        `yaml:"monitor_timeout" json:"monitor_timeout"`
+		CaCert             string        `yaml:"cacert" json:"cacert"`
+	}
+
+	OpenstackAuth struct {
+		AuthUrl                     string `yaml:"auth_url" json:"auth_url"`
+		ProjectId                   string `yaml:"project_id" json:"project_id"`
+		ProjectName                 string `yaml:"project_name" json:"project_name"`
+		UserDomainName              string `yaml:"user_domain_name" json:"user_domain_name"`
+		ApplicationCredentialName   string `yaml:"application_credential_name" json:"application_credential_name"`
+		ApplicationCredentialId     string `yaml:"application_credential_id" json:"application_credential_id"`
+		ApplicationCredentialSecret string `yaml:"application_credential_secret" json:"application_credential_secret"`
 	}
 	Clouds struct {
 		Openstack Openstack `yaml:"openstack" json:"openstack"`
@@ -53,34 +63,17 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 	openstackConf := "[Global]\n"
 
 	// set env.rc variables
-	if authUrl, ok := authOs["auth_url"]; ok {
-		os.Setenv("CAPO_AUTH_URL", authUrl.(string))
-		openstackConf = openstackConf + `auth-url="` + authUrl.(string) + "\"\n"
-	}
-	if username, ok := authOs["username"]; ok {
-		os.Setenv("CAPO_USERNAME", username.(string))
-		openstackConf = openstackConf + `username="` + username.(string) + "\"\n"
-	}
-	if password, ok := authOs["password"]; ok {
-		os.Setenv("CAPO_PASSWORD", password.(string))
-		openstackConf = openstackConf + `password="` + password.(string) + "\"\n"
-	}
-	if region, ok := authOs["region"]; ok {
-		os.Setenv("CAPO_REGION", region.(string))
-		openstackConf = openstackConf + `region="` + region.(string) + "\"\n"
-	}
-	if projectId, ok := authOs["project_id"]; ok {
-		os.Setenv("CAPO_PROJECT_ID", projectId.(string))
-		openstackConf = openstackConf + `tenant-id="` + projectId.(string) + "\"\n"
-	}
-	if projectName, ok := authOs["project_name"]; ok {
-		os.Setenv("CAPO_PROJECT_NAME", projectName.(string))
-		openstackConf = openstackConf + `tenant-name="` + projectName.(string) + "\"\n"
-	}
-	if domainName, ok := authOs["user_domain_name"]; ok {
-		os.Setenv("CAPO_DOMAIN_NAME", domainName.(string))
-		openstackConf = openstackConf + `domain-name="` + domainName.(string) + "\"\n"
-	}
+	os.Setenv("CAPO_AUTH_URL", authOs.AuthUrl)
+	openstackConf = openstackConf + `auth-url="` + authOs.AuthUrl + "\"\n"
+
+	os.Setenv("CAPO_PROJECT_ID", authOs.ProjectId)
+	openstackConf = openstackConf + `tenant-id="` + authOs.ProjectId + "\"\n"
+
+	os.Setenv("CAPO_PROJECT_NAME", authOs.ProjectName)
+	openstackConf = openstackConf + `tenant-name="` + authOs.ProjectName + "\"\n"
+
+	os.Setenv("CAPO_DOMAIN_NAME", authOs.UserDomainName)
+	openstackConf = openstackConf + `domain-name="` + authOs.UserDomainName + "\"\n"
 
 	caCertB64 := base64.StdEncoding.EncodeToString([]byte(cloudOs.CaCert + "\n"))
 	os.Setenv("OPENSTACK_CLOUD_CACERT_B64", caCertB64)
@@ -88,18 +81,14 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 		openstackConf = openstackConf + `ca-file="/etc/certs/cacert"` + "\n"
 	}
 
-	if applicationCredentialName, ok := authOs["application_credential_name"]; ok {
-		os.Setenv("CAPO_APPLICATION_CREDENTIAL_NAME", applicationCredentialName.(string))
-		openstackConf = openstackConf + `application-credential-name="` + applicationCredentialName.(string) + "\"\n"
-	}
-	if applicationCredentialId, ok := authOs["application_credential_id"]; ok {
-		os.Setenv("CAPO_APPLICATION_CREDENTIAL_ID", applicationCredentialId.(string))
-		openstackConf = openstackConf + `application-credential-id="` + applicationCredentialId.(string) + "\"\n"
-	}
-	if applicationCredentialSecret, ok := authOs["application_credential_secret"]; ok {
-		os.Setenv("CAPO_APPLICATION_CREDENTIAL_SECRET", applicationCredentialSecret.(string))
-		openstackConf = openstackConf + `application-credential-secret="` + applicationCredentialSecret.(string) + "\"\n"
-	}
+	os.Setenv("CAPO_APPLICATION_CREDENTIAL_NAME", authOs.ApplicationCredentialName)
+	openstackConf = openstackConf + `application-credential-name="` + authOs.ApplicationCredentialName + "\"\n"
+
+	os.Setenv("CAPO_APPLICATION_CREDENTIAL_ID", authOs.ApplicationCredentialId)
+	openstackConf = openstackConf + `application-credential-id="` + authOs.ApplicationCredentialId + "\"\n"
+
+	os.Setenv("CAPO_APPLICATION_CREDENTIAL_SECRET", authOs.ApplicationCredentialSecret)
+	openstackConf = openstackConf + `application-credential-secret="` + authOs.ApplicationCredentialSecret + "\"\n"
 
 	if cloudOs.LbMethod != "" ||
 		cloudOs.CreateMonitor ||
