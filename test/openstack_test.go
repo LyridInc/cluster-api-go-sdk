@@ -57,6 +57,36 @@ func TestQuota(t *testing.T) {
 	})
 }
 
+// go test ./test -v -run ^TestUpdateDeploymentKindManifest$
+func TestUpdateDeploymentKindManifest(t *testing.T) {
+	cl := api.OpenstackClient{
+		NetworkEndpoint: os.Getenv("OS_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("OS_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("OS_PROJECT_ID"),
+	}
+
+	url := "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml"
+
+	yaml, err := model.ReadYamlFromUrl(url)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	yamlResult, err := cl.UpdateYamlManifest(yaml, option.ManifestOption{
+		DeploymentKindOption: option.DeploymentKindOption{
+			VolumeSecretName: "capi-local-2-csi-secret",
+		},
+	})
+	if err != nil {
+		t.Fatal("Update yaml from url error:", error.Error(err))
+	}
+
+	if err := os.WriteFile("./data/test-controller-plugin-deployment.yaml", []byte(yamlResult), 0644); err != nil {
+		t.Fatal("Write yaml file error:", url, error.Error(err))
+	}
+}
+
 // go test ./test -v -run ^TestUpdateYamlManifest$
 func TestUpdateYamlManifest(t *testing.T) {
 	cl := api.OpenstackClient{

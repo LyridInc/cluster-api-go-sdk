@@ -164,10 +164,12 @@ func TestCreateSecret(t *testing.T) {
 	}
 	cloudsYaml.SetEnvironment(opt)
 
-	cloudConf := os.Getenv("OPENSTACK_CLOUD_PROVIDER_CONF_B64")
+	cloudConf := os.Getenv("OPENSTACK_CLOUD_PROVIDER_CONF")
 	if cloudConf == "" {
-		t.Fatal("Error reading cloud conf: OPENSTACK_CLOUD_PROVIDER_CONF_B64 is not set")
+		t.Fatal("Error reading cloud conf: OPENSTACK_CLOUD_PROVIDER_CONF is not set")
 	}
+
+	t.Log(cloudConf)
 
 	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	if err := capi.SetKubernetesClientset("./data/capi-local-2.kubeconfig"); err != nil {
@@ -198,5 +200,6 @@ func TestCreateSecret(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error create secret:", error.Error(err))
 	}
-	t.Log((*secretValue).Data)
+	x := (*secretValue).Data
+	t.Log(string(x["cloud.conf"]))
 }

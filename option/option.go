@@ -34,7 +34,16 @@ type (
 	}
 
 	SecretKindOption struct {
-		Data map[string]interface{}
+		Data     map[string]interface{}
+		Metadata map[string]interface{}
+	}
+
+	DaemonSetKindOption struct {
+		VolumeSecretName string
+	}
+
+	DeploymentKindOption struct {
+		VolumeSecretName string
 	}
 
 	ManifestOption struct {
@@ -42,6 +51,8 @@ type (
 		InfrastructureKindSpecOption InfrastructureKindSpecOption
 		StorageClassKindOption       StorageClassKindOption
 		SecretKindOption             SecretKindOption
+		DeploymentKindOption         DeploymentKindOption
+		DaemonSetKindOption          DaemonSetKindOption
 	}
 )
 
@@ -55,7 +66,7 @@ const FLANNEL_MANIFEST_URL = "https://raw.githubusercontent.com/flannel-io/flann
 var OPENSTACK_CLOUD_CONTROLLER_MANIFEST_URLS = []string{
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-roles.yaml",
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-role-bindings.yaml",
-	// "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml",
+	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/openstack-cloud-controller-manager-ds.yaml",
 }
 
 var OPENSTACK_CINDER_DRIVER_MANIFEST_URLS = map[string]interface{}{
@@ -63,9 +74,9 @@ var OPENSTACK_CINDER_DRIVER_MANIFEST_URLS = map[string]interface{}{
 	"plugins": []string{
 		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/csi-cinder-driver.yaml",
 		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml",
-		// "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml",
 		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin-rbac.yaml",
-		// "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml",
 	},
 }
 

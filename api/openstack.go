@@ -214,6 +214,36 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 					clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
 				}
 				unstructuredObj.Object["spec"] = clusterSpec
+			} else if strings.HasPrefix(apiVersion, "apps") && kind == "DaemonSet" {
+				daemonSetSpec := yamlmodel.DaemonSetSpec{}
+				json.Unmarshal(specByte, &daemonSetSpec)
+				if opt.DaemonSetKindOption.VolumeSecretName != "" {
+					for i, v := range daemonSetSpec.Template.Spec.Volumes {
+						vv := v.(map[string]interface{})
+						if vv["name"] == "cloud-config-volume" || vv["name"] == "secret-cinderplugin" {
+							vvs := vv["secret"].(map[string]interface{})
+							vvs["secretName"] = opt.DaemonSetKindOption.VolumeSecretName
+							vv["secret"] = vvs
+							daemonSetSpec.Template.Spec.Volumes[i] = vv
+						}
+					}
+				}
+				unstructuredObj.Object["spec"] = daemonSetSpec
+			} else if strings.HasPrefix(apiVersion, "apps") && kind == "Deployment" {
+				deploymentSpec := yamlmodel.DeploymentSpec{}
+				json.Unmarshal(specByte, &deploymentSpec)
+				if opt.DeploymentKindOption.VolumeSecretName != "" {
+					for i, v := range deploymentSpec.Template.Spec.Volumes {
+						vv := v.(map[string]interface{})
+						if vv["name"] == "cloud-config-volume" || vv["name"] == "secret-cinderplugin" {
+							vvs := vv["secret"].(map[string]interface{})
+							vvs["secretName"] = opt.DeploymentKindOption.VolumeSecretName
+							vv["secret"] = vvs
+							deploymentSpec.Template.Spec.Volumes[i] = vv
+						}
+					}
+				}
+				unstructuredObj.Object["spec"] = deploymentSpec
 			}
 		} else {
 			unstructuredObjByte, _ := json.Marshal(unstructuredObj.Object)
@@ -232,6 +262,9 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 				json.Unmarshal(unstructuredObjByte, &secret)
 				if opt.SecretKindOption.Data != nil {
 					secret.Data = opt.SecretKindOption.Data
+				}
+				if opt.SecretKindOption.Metadata != nil {
+					secret.Metadata = opt.SecretKindOption.Metadata
 				}
 				b, _ := json.Marshal(secret)
 				json.Unmarshal(b, &kindMap)
