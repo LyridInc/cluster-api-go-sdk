@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/LyridInc/cluster-api-go-sdk/model"
@@ -228,7 +229,11 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 						}
 					}
 				}
-				unstructuredObj.Object["spec"] = daemonSetSpec
+				m := map[string]interface{}{}
+				specByte, _ = json.Marshal(daemonSetSpec)
+				json.Unmarshal(specByte, &m)
+				removeNulls(m)
+				unstructuredObj.Object["spec"] = m
 			} else if strings.HasPrefix(apiVersion, "apps") && kind == "Deployment" {
 				deploymentSpec := yamlmodel.DeploymentSpec{}
 				json.Unmarshal(specByte, &deploymentSpec)
@@ -243,7 +248,11 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 						}
 					}
 				}
-				unstructuredObj.Object["spec"] = deploymentSpec
+				m := map[string]interface{}{}
+				specByte, _ = json.Marshal(deploymentSpec)
+				json.Unmarshal(specByte, &m)
+				removeNulls(m)
+				unstructuredObj.Object["spec"] = m
 			}
 		} else {
 			unstructuredObjByte, _ := json.Marshal(unstructuredObj.Object)
@@ -281,4 +290,43 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 	}
 
 	return yamlResult, nil
+}
+
+func CleanUpMapFromNullValues(m *map[string]interface{}) {
+	for key, value := range *m {
+		if value == nil {
+			delete(*m, key)
+		}
+	}
+}
+
+func removeNulls(m map[string]interface{}) {
+	val := reflect.ValueOf(m)
+	for _, e := range val.MapKeys() {
+		v := val.MapIndex(e)
+		if v.IsNil() {
+			delete(m, e.String())
+			continue
+		}
+		switch t := v.Interface().(type) {
+		// If key is a JSON object (Go Map), use recursion to go deeper
+		case map[string]interface{}:
+			removeNulls(t)
+
+		case string:
+			if string(t) == "" {
+				delete(m, e.String())
+				continue
+			}
+
+		case []interface{}:
+			for _, vv := range t {
+				vvr := reflect.ValueOf(vv)
+				switch tvv := vvr.Interface().(type) {
+				case map[string]interface{}:
+					removeNulls(tvv)
+				}
+			}
+		}
+	}
 }

@@ -2,8 +2,7 @@ package yaml
 
 type (
 	DaemonSetSpec struct {
-		Selector       Selector
-		UpdateStrategy map[string]interface{}
-		Template       Template
+		Selector Selector `yaml:"selector" json:"selector"`
+		Template Template `yaml:"template" json:"template"`
 	}
 )

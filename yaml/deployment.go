@@ -43,23 +43,29 @@ type (
 	}
 
 	Container struct {
-		Name            string         `yaml:"name" json:"name"`
-		Image           string         `yaml:"image" json:"image"`
-		Args            []string       `yaml:"args" json:"args"`
-		Env             []ContainerEnv `yaml:"env" json:"env"`
-		ImagePullPolicy string         `yaml:"imagePullPolicy" json:"imagePullPolicy"`
-		VolumeMounts    []VolumeMount  `yaml:"volumeMounts" json:"volumeMounts"`
+		Name            string                  `yaml:"name" json:"name"`
+		Image           string                  `yaml:"image" json:"image"`
+		Args            []string                `yaml:"args" json:"args"`
+		Env             []ContainerEnv          `yaml:"env" json:"env"`
+		ImagePullPolicy string                  `yaml:"imagePullPolicy" json:"imagePullPolicy"`
+		VolumeMounts    []VolumeMount           `yaml:"volumeMounts" json:"volumeMounts"`
+		SecurityContext *map[string]interface{} `yaml:"securityContext" json:"securityContext"`
+		Ports           *[]interface{}          `yaml:"ports" json:"ports"`
+		LivenessProbe   *map[string]interface{} `yaml:"livenessProbe" json:"livenessProbe"`
 	}
 
 	ContainerEnv struct {
-		Name  string      `yaml:"name" json:"name"`
-		Value interface{} `yaml:"value" json:"value"`
+		Name      string                  `yaml:"name" json:"name"`
+		Value     interface{}             `yaml:"value" json:"value"`
+		ValueFrom *map[string]interface{} `yaml:"valueFrom" json:"valueFrom"`
 	}
 
 	VolumeMount struct {
-		Name      string                 `yaml:"name" json:"name"`
-		MountPath string                 `yaml:"mountPath" json:"mountPath"`
-		HostPath  map[string]interface{} `yaml:"hostPath" json:"hostPath"`
-		Secret    map[string]interface{} `yaml:"secret" json:"secret"`
+		Name             string                  `yaml:"name" json:"name"`
+		MountPath        string                  `yaml:"mountPath" json:"mountPath"`
+		HostPath         *map[string]interface{} `yaml:"hostPath" json:"hostPath"`
+		Secret           *map[string]interface{} `yaml:"secret" json:"secret"`
+		ReadOnly         *bool                   `yaml:"readOnly" json:"readOnly"`
+		MountPropagation string                  `yaml:"mountPropagation" json:"mountPropagation"`
 	}
 )

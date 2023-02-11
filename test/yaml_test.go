@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/LyridInc/cluster-api-go-sdk/api"
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 )
@@ -46,4 +47,34 @@ func TestCloudsYaml(t *testing.T) {
 	}
 
 	t.Log(filteredEnvs)
+}
+
+// go test ./test -v -run ^TestUpdateYaml$
+func TestUpdateYaml(t *testing.T) {
+	cl := api.OpenstackClient{
+		NetworkEndpoint: os.Getenv("OS_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("OS_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("OS_PROJECT_ID"),
+	}
+
+	url := "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml"
+
+	yaml, err := model.ReadYamlFromUrl(url)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	yamlResult, err := cl.UpdateYamlManifest(yaml, option.ManifestOption{
+		DaemonSetKindOption: option.DaemonSetKindOption{
+			VolumeSecretName: "test-secret-update",
+		},
+	})
+	if err != nil {
+		t.Fatal("Update yaml from url error:", error.Error(err))
+	}
+
+	if err := os.WriteFile("./data/test-daemonset.yaml", []byte(yamlResult), 0644); err != nil {
+		t.Fatal("Write yaml file error:", url, error.Error(err))
+	}
 }
