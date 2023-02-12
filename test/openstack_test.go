@@ -19,11 +19,20 @@ func TestClientAuthentication(t *testing.T) {
 		AuthToken:       os.Getenv("OS_TOKEN"),
 		ProjectId:       os.Getenv("OS_PROJECT_ID"),
 	}
-	cl.Authenticate(api.OpenstackCredential{
+	if err := cl.Authenticate(api.OpenstackCredential{
 		ApplicationCredentialName:   os.Getenv("OS_APPLICATION_CREDENTIAL_NAME"),
 		ApplicationCredentialId:     os.Getenv("OS_APPLICATION_CREDENTIAL_ID"),
 		ApplicationCredentialSecret: os.Getenv("OS_APPLICATION_CREDENTIAL_SECRET"),
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := cl.Authenticate(api.OpenstackCredential{
+		ApplicationCredentialName:   os.Getenv("OS_APPLICATION_CREDENTIAL_NAME"),
+		ApplicationCredentialId:     os.Getenv("OS_APPLICATION_CREDENTIAL_ID"),
+		ApplicationCredentialSecret: os.Getenv("OS_APPLICATION_CREDENTIAL_SECRET"),
+	}); err != nil {
+		t.Fatal("#2: ", err)
+	}
 }
 
 // go test ./test -v -run ^TestCheckAuthToken$

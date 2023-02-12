@@ -102,6 +102,7 @@ func (c *OpenstackClient) CheckAuthToken() (map[string]interface{}, error) {
 	}
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
+	request.Header.Set("X-Subject-Token", c.AuthToken)
 
 	client := &http.Client{}
 	response, err := client.Do(request)
