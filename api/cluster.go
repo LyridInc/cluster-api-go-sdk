@@ -35,29 +35,29 @@ type (
 	}
 )
 
-func NewClusterApiClient(configFile, kubeconfigFile string) *ClusterApiClient {
+func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, error) {
 	cl, err := client.New(configFile)
 	if err != nil {
 		log.Fatal("Client config error:", err)
-		return nil
+		return nil, err
 	}
 
 	conf, err := clientcmd.BuildConfigFromFlags("", kubeconfigFile)
 	if err != nil {
 		log.Fatal("Build config from flags error:", err)
-		return nil
+		return nil, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(conf)
 	if err != nil {
 		log.Fatal("Clientset config error:", err)
-		return nil
+		return nil, err
 	}
 
 	dd, err := dynamic.NewForConfig(conf)
 	if err != nil {
 		log.Fatal("Dynamic interface config error:", err)
-		return nil
+		return nil, err
 	}
 
 	return &ClusterApiClient{
@@ -66,7 +66,7 @@ func NewClusterApiClient(configFile, kubeconfigFile string) *ClusterApiClient {
 		DynamicInterface: dd,
 		ConfigFile:       configFile,
 		KubeconfigFile:   kubeconfigFile,
-	}
+	}, nil
 }
 
 func (c *ClusterApiClient) SetKubernetesClientsetFromConfigBytes(configBytes []byte) error {

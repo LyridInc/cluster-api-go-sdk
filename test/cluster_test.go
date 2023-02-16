@@ -32,7 +32,7 @@ func TestGenerateClusterTemplate(t *testing.T) {
 	cloudsYaml.SetEnvironment(opt)
 
 	infrastructure := "openstack"
-	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 
 	clusterName := "capi-local-test"
 	ready, err := capi.InfrastructureReadiness(infrastructure)
@@ -62,9 +62,9 @@ func TestGenerateClusterTemplate(t *testing.T) {
 
 // go test ./test -v -run ^TestGetWorkloadClusterKubeconfig$
 func TestGetWorkloadClusterKubeconfig(t *testing.T) {
-	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	t.Run("cluster exists", func(t *testing.T) {
-		clusterName := "capi-local-2"
+		clusterName := "capi-testing"
 		conf, err := capi.GetWorkloadClusterKubeconfig(clusterName)
 		if err != nil {
 			t.Fatalf(error.Error(err))
@@ -83,7 +83,7 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 
 // go test ./test -v -run ^TestSetClientsetFromConfigBytes$
 func TestSetClientsetFromConfigBytes(t *testing.T) {
-	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	clusterName := "capi-local-2"
 	conf, err := capi.GetWorkloadClusterKubeconfig(clusterName)
 	if err != nil {
@@ -116,7 +116,7 @@ func TestSetClientsetFromConfigBytes(t *testing.T) {
 
 // go test ./test -v -run ^TestKubectlManifest$
 func TestKubectlManifest(t *testing.T) {
-	capi := api.NewClusterApiClient("", "../local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "../local.kubeconfig")
 	yamlByte, err := os.ReadFile("../capi-local.yaml") // workload cluster yaml manifest
 	if err != nil {
 		t.Fatal(error.Error(err))
@@ -171,7 +171,7 @@ func TestCreateSecret(t *testing.T) {
 
 	t.Log(cloudConf)
 
-	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	if err := capi.SetKubernetesClientset("./data/capi-local-2.kubeconfig"); err != nil {
 		t.Fatal("Error set kubeconfig:", error.Error(err))
 	}
@@ -202,4 +202,21 @@ func TestCreateSecret(t *testing.T) {
 	}
 	x := (*secretValue).Data
 	t.Log(string(x["cloud.conf"]))
+}
+
+// go test ./test -v -run ^TestInitializeInfrastructure$
+func TestInitializeInfrastructure(t *testing.T) {
+	capi, err := api.NewClusterApiClient("", "C:/Users/Lyrid/.kube/beta.config")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ready, err := capi.InfrastructureReadiness("openstack")
+	if !ready || err != nil {
+		clComponents, err := capi.InitInfrastructure("openstack")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(clComponents)
+	}
 }

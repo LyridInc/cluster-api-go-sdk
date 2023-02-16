@@ -193,7 +193,7 @@ func TestUpdateYamlManifest(t *testing.T) {
 
 // go test ./test -v -run ^TestDeployCniFlannel$
 func TestDeployCniFlannel(t *testing.T) {
-	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	if err := capi.SetKubernetesClientset("./data/capi-local-2.kubeconfig"); err != nil {
 		t.Fatal("Error set kubeconfig:", error.Error(err))
 	}
@@ -227,12 +227,10 @@ func TestDeployCniFlannel(t *testing.T) {
 
 // go test ./test -v -run ^TestInstallCinderCsiDriver$
 func TestInstallCinderCsiDriver(t *testing.T) {
-	capi := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	if err := capi.SetKubernetesClientset("./data/capi-local-2.kubeconfig"); err != nil {
 		t.Fatal("Error set kubeconfig:", error.Error(err))
 	}
-
-	// TODO: add -ignore-volume-az on csi-secret-cinderplugin.yaml
 
 	t.Run("create cinder csi secret", func(t *testing.T) {
 		yamlByte, _ := os.ReadFile("./data/csi-secret-cinderplugin.yaml")
@@ -257,9 +255,6 @@ func TestInstallCinderCsiDriver(t *testing.T) {
 		}
 	})
 
-	// https://github.com/kubernetes/cloud-provider-openstack/blob/master/docs/cinder-csi-plugin/using-cinder-csi-plugin.md
-	// ignore-volume-az Optional. When Topology feature enabled, by default, PV volume node affinity is populated with volume accessible topology, which is volume AZ. But, some of the openstack users do not have compute zones named exactly the same as volume zones. This might cause pods to go in pending state as no nodes available in volume AZ. Enabling ignore-volume-az=true, ignores volumeAZ and schedules on any of the available node AZ. Default false. Check cross_az_attach in nova configuration for further information
-	// https://stackoverflow.com/questions/55040596/k8s-cinder-0-x-nodes-are-available-x-nodes-had-volume-node-affinity-confli
 	t.Run("provision block storage", func(t *testing.T) {
 		yamlByte, _ := os.ReadFile("./data/block-storage.yaml")
 		yaml := string(yamlByte)
@@ -268,4 +263,50 @@ func TestInstallCinderCsiDriver(t *testing.T) {
 			t.Fatal("Error provisioning block storage:", error.Error(err))
 		}
 	})
+}
+
+// go test ./test -v -run ^TestCreateStorageClass$
+func TestCreateStorageClass(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/capi-testing.kubeconfig")
+
+	yamlByte, _ := os.ReadFile("./data/sc.yaml")
+	yaml := string(yamlByte)
+
+	if err := capi.ApplyYaml(yaml); err != nil {
+		t.Fatal("Error create storage class:", error.Error(err))
+	}
+}
+
+// go test ./test -v -run ^TestCreatePersistentVolumeClaim$
+func TestCreatePersistentVolumeClaim(t *testing.T) {
+	cl := api.OpenstackClient{
+		NetworkEndpoint: os.Getenv("OS_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("OS_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("OS_PROJECT_ID"),
+	}
+	capi, _ := api.NewClusterApiClient("", "./data/capi-testing.kubeconfig")
+
+	yamlByte, _ := os.ReadFile("./data/pvc.yaml")
+	yaml := string(yamlByte)
+
+	yamlResult, err := cl.UpdateYamlManifest(yaml, option.ManifestOption{
+		PersistentVolumeClaimKindOption: option.PersistentVolumeClaimKindOption{
+			Metadata: map[string]interface{}{
+				"name": "csi-pvc-cinderplugin-custom",
+			},
+			Storage: "10Gi",
+		},
+	})
+	if err != nil {
+		t.Fatal("Update yaml from url error:", error.Error(err))
+	}
+
+	if err := os.WriteFile("./data/custom-pvc.yaml", []byte(yamlResult), 0644); err != nil {
+		t.Fatal("Write yaml error:", error.Error(err))
+	}
+
+	if err := capi.ApplyYaml(yamlResult); err != nil {
+		t.Fatal("Error create storage class:", error.Error(err))
+	}
 }

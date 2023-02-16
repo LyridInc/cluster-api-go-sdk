@@ -46,13 +46,21 @@ type (
 		VolumeSecretName string
 	}
 
+	PersistentVolumeClaimKindOption struct {
+		Metadata         map[string]interface{}
+		Storage          string
+		VolumeMode       string
+		StorageClassName string
+	}
+
 	ManifestOption struct {
-		ClusterKindSpecOption        ClusterKindSpecOption
-		InfrastructureKindSpecOption InfrastructureKindSpecOption
-		StorageClassKindOption       StorageClassKindOption
-		SecretKindOption             SecretKindOption
-		DeploymentKindOption         DeploymentKindOption
-		DaemonSetKindOption          DaemonSetKindOption
+		ClusterKindSpecOption           ClusterKindSpecOption
+		InfrastructureKindSpecOption    InfrastructureKindSpecOption
+		StorageClassKindOption          StorageClassKindOption
+		SecretKindOption                SecretKindOption
+		DeploymentKindOption            DeploymentKindOption
+		DaemonSetKindOption             DaemonSetKindOption
+		PersistentVolumeClaimKindOption PersistentVolumeClaimKindOption
 	}
 )
 

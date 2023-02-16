@@ -199,88 +199,7 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 		}
 
 		unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
-
-		apiVersion := unstructuredObj.GetAPIVersion()
-		kind := unstructuredObj.GetKind()
-		if spec, ok := unstructuredObj.Object["spec"]; ok {
-			specByte, _ := json.Marshal(spec)
-			if strings.HasPrefix(apiVersion, "infrastructure.cluster.x-k8s.io") && kind == "OpenStackCluster" {
-				infrastructureSpec := yamlmodel.InfrastructureSpec{}
-				json.Unmarshal(specByte, &infrastructureSpec)
-				infrastructureSpec.AllowAllInClusterTraffic = opt.InfrastructureKindSpecOption.AllowAllInClusterTraffic
-				unstructuredObj.Object["spec"] = infrastructureSpec
-			} else if strings.HasPrefix(apiVersion, "cluster.x-k8s.io") && kind == "Cluster" {
-				clusterSpec := yamlmodel.ClusterSpec{}
-				json.Unmarshal(specByte, &clusterSpec)
-				if opt.ClusterKindSpecOption.CidrBlocks != nil {
-					clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
-				}
-				unstructuredObj.Object["spec"] = clusterSpec
-			} else if strings.HasPrefix(apiVersion, "apps") && kind == "DaemonSet" {
-				daemonSetSpec := yamlmodel.DaemonSetSpec{}
-				json.Unmarshal(specByte, &daemonSetSpec)
-				if opt.DaemonSetKindOption.VolumeSecretName != "" {
-					for i, v := range daemonSetSpec.Template.Spec.Volumes {
-						vv := v.(map[string]interface{})
-						if vv["name"] == "cloud-config-volume" || vv["name"] == "secret-cinderplugin" {
-							vvs := vv["secret"].(map[string]interface{})
-							vvs["secretName"] = opt.DaemonSetKindOption.VolumeSecretName
-							vv["secret"] = vvs
-							daemonSetSpec.Template.Spec.Volumes[i] = vv
-						}
-					}
-				}
-				m := map[string]interface{}{}
-				specByte, _ = json.Marshal(daemonSetSpec)
-				json.Unmarshal(specByte, &m)
-				removeNulls(m)
-				unstructuredObj.Object["spec"] = m
-			} else if strings.HasPrefix(apiVersion, "apps") && kind == "Deployment" {
-				deploymentSpec := yamlmodel.DeploymentSpec{}
-				json.Unmarshal(specByte, &deploymentSpec)
-				if opt.DeploymentKindOption.VolumeSecretName != "" {
-					for i, v := range deploymentSpec.Template.Spec.Volumes {
-						vv := v.(map[string]interface{})
-						if vv["name"] == "cloud-config-volume" || vv["name"] == "secret-cinderplugin" {
-							vvs := vv["secret"].(map[string]interface{})
-							vvs["secretName"] = opt.DeploymentKindOption.VolumeSecretName
-							vv["secret"] = vvs
-							deploymentSpec.Template.Spec.Volumes[i] = vv
-						}
-					}
-				}
-				m := map[string]interface{}{}
-				specByte, _ = json.Marshal(deploymentSpec)
-				json.Unmarshal(specByte, &m)
-				removeNulls(m)
-				unstructuredObj.Object["spec"] = m
-			}
-		} else {
-			unstructuredObjByte, _ := json.Marshal(unstructuredObj.Object)
-			kindMap := map[string]interface{}{}
-			if strings.HasPrefix(apiVersion, "storage.k8s.io") && kind == "StorageClass" {
-				storageClass := yamlmodel.StorageClass{}
-				json.Unmarshal(unstructuredObjByte, &storageClass)
-				if opt.StorageClassKindOption.Parameters != nil {
-					storageClass.Parameters = opt.StorageClassKindOption.Parameters
-				}
-				b, _ := json.Marshal(storageClass)
-				json.Unmarshal(b, &kindMap)
-				unstructuredObj.Object = kindMap
-			} else if kind == "Secret" {
-				secret := yamlmodel.Secret{}
-				json.Unmarshal(unstructuredObjByte, &secret)
-				if opt.SecretKindOption.Data != nil {
-					secret.Data = opt.SecretKindOption.Data
-				}
-				if opt.SecretKindOption.Metadata != nil {
-					secret.Metadata = opt.SecretKindOption.Metadata
-				}
-				b, _ := json.Marshal(secret)
-				json.Unmarshal(b, &kindMap)
-				unstructuredObj.Object = kindMap
-			}
-		}
+		unstructuredObj = UpdateUnstructuredObject(unstructuredObj, opt)
 
 		x, _ := yaml.Marshal(unstructuredObj.Object)
 		yamlResult = yamlResult + "---\n" + string(x)
@@ -291,6 +210,122 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 	}
 
 	return yamlResult, nil
+}
+
+func UpdateUnstructuredObject(unstructuredObj *unstructured.Unstructured, opt option.ManifestOption) *unstructured.Unstructured {
+	apiVersion := unstructuredObj.GetAPIVersion()
+	kind := unstructuredObj.GetKind()
+
+	spec, ok := unstructuredObj.Object["spec"]
+	var (
+		specByte      []byte
+		objByte       []byte
+		specInterface interface{}
+	)
+	if ok {
+		specByte, _ = json.Marshal(spec)
+	}
+	unstructuredObjByte, _ := json.Marshal(unstructuredObj.Object)
+	kindMap := map[string]interface{}{}
+
+	if strings.HasPrefix(apiVersion, "storage.k8s.io") && kind == "StorageClass" {
+		storageClass := yamlmodel.StorageClass{}
+		json.Unmarshal(unstructuredObjByte, &storageClass)
+		if opt.StorageClassKindOption.Parameters != nil {
+			storageClass.Parameters = opt.StorageClassKindOption.Parameters
+		}
+		objByte, _ = json.Marshal(storageClass)
+	} else if kind == "Secret" {
+		secret := yamlmodel.Secret{}
+		json.Unmarshal(unstructuredObjByte, &secret)
+		if opt.SecretKindOption.Data != nil {
+			secret.Data = opt.SecretKindOption.Data
+		}
+		if opt.SecretKindOption.Metadata != nil {
+			secret.Metadata = opt.SecretKindOption.Metadata
+		}
+		objByte, _ = json.Marshal(secret)
+	} else if kind == "PersistentVolumeClaim" {
+		pvc := yamlmodel.PersistentVolumeClaim{}
+		json.Unmarshal(unstructuredObjByte, &pvc)
+		if opt.PersistentVolumeClaimKindOption.Metadata != nil {
+			pvc.Metadata = opt.PersistentVolumeClaimKindOption.Metadata
+		}
+		objByte, _ = json.Marshal(pvc)
+		if ok {
+			if opt.PersistentVolumeClaimKindOption.Storage != "" {
+				pvc.Spec.Resources.Requests.Storage = opt.PersistentVolumeClaimKindOption.Storage
+			}
+			if opt.PersistentVolumeClaimKindOption.StorageClassName != "" {
+				pvc.Spec.StorageClassName = opt.PersistentVolumeClaimKindOption.StorageClassName
+			}
+			if opt.PersistentVolumeClaimKindOption.VolumeMode != "" {
+				pvc.Spec.VolumeMode = opt.PersistentVolumeClaimKindOption.VolumeMode
+			}
+			specInterface = pvc.Spec
+		}
+	}
+
+	if len(objByte) > 0 {
+		json.Unmarshal(objByte, &kindMap)
+		unstructuredObj.Object = kindMap
+	}
+
+	if ok {
+		if strings.HasPrefix(apiVersion, "infrastructure.cluster.x-k8s.io") && kind == "OpenStackCluster" {
+			infrastructureSpec := yamlmodel.InfrastructureSpec{}
+			json.Unmarshal(specByte, &infrastructureSpec)
+			infrastructureSpec.AllowAllInClusterTraffic = opt.InfrastructureKindSpecOption.AllowAllInClusterTraffic
+			specInterface = infrastructureSpec
+		} else if strings.HasPrefix(apiVersion, "cluster.x-k8s.io") && kind == "Cluster" {
+			clusterSpec := yamlmodel.ClusterSpec{}
+			json.Unmarshal(specByte, &clusterSpec)
+			if opt.ClusterKindSpecOption.CidrBlocks != nil {
+				clusterSpec.ClusterNetwork.Pods.CidrBlocks = opt.ClusterKindSpecOption.CidrBlocks
+			}
+			specInterface = clusterSpec
+		} else if strings.HasPrefix(apiVersion, "apps") && kind == "DaemonSet" {
+			daemonSetSpec := yamlmodel.DaemonSetSpec{}
+			json.Unmarshal(specByte, &daemonSetSpec)
+			if opt.DaemonSetKindOption.VolumeSecretName != "" {
+				for i, v := range daemonSetSpec.Template.Spec.Volumes {
+					vv := v.(map[string]interface{})
+					if vv["name"] == "cloud-config-volume" || vv["name"] == "secret-cinderplugin" {
+						vvs := vv["secret"].(map[string]interface{})
+						vvs["secretName"] = opt.DaemonSetKindOption.VolumeSecretName
+						vv["secret"] = vvs
+						daemonSetSpec.Template.Spec.Volumes[i] = vv
+					}
+				}
+			}
+			specInterface = daemonSetSpec
+		} else if strings.HasPrefix(apiVersion, "apps") && kind == "Deployment" {
+			deploymentSpec := yamlmodel.DeploymentSpec{}
+			json.Unmarshal(specByte, &deploymentSpec)
+			if opt.DeploymentKindOption.VolumeSecretName != "" {
+				for i, v := range deploymentSpec.Template.Spec.Volumes {
+					vv := v.(map[string]interface{})
+					if vv["name"] == "cloud-config-volume" || vv["name"] == "secret-cinderplugin" {
+						vvs := vv["secret"].(map[string]interface{})
+						vvs["secretName"] = opt.DeploymentKindOption.VolumeSecretName
+						vv["secret"] = vvs
+						deploymentSpec.Template.Spec.Volumes[i] = vv
+					}
+				}
+			}
+			specInterface = deploymentSpec
+		}
+
+		if !reflect.ValueOf(&specInterface).Elem().IsNil() {
+			m := map[string]interface{}{}
+			specByte, _ = json.Marshal(specInterface)
+			json.Unmarshal(specByte, &m)
+			removeNulls(m)
+			unstructuredObj.Object["spec"] = m
+		}
+	}
+
+	return unstructuredObj
 }
 
 func CleanUpMapFromNullValues(m *map[string]interface{}) {
