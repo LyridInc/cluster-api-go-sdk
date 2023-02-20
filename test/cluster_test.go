@@ -220,3 +220,43 @@ func TestInitializeInfrastructure(t *testing.T) {
 		t.Log(clComponents)
 	}
 }
+
+// go test ./test -v -run ^TestCreateNamespace$
+func TestCreateNamespace(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/capi-helm-testing.kubeconfig")
+	namespace := "test-ns"
+
+	t.Run("create namespace", func(t *testing.T) {
+		ns, err := capi.CreateNamespace(namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(ns)
+	})
+
+	t.Run("add label namespace", func(t *testing.T) {
+		ns, err := capi.AddLabelNamespace(namespace, "istio-injection", "enabled")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(ns)
+	})
+}
+
+// go test ./test -v -run ^TestKubectlManifestWithLabelSelector$
+func TestKubectlManifestWithLabelSelector(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/capi-helm-testing.kubeconfig")
+
+	// kubectl apply -l knative.dev/crd-install=true -f https://github.com/knative/net-istio/releases/download/knative-v1.8.1/istio.yaml
+	t.Run("kubectl apply -l knative.dev/crd-install=true -f", func(t *testing.T) {
+		capi.LabelSelector = &metav1.LabelSelector{MatchLabels: map[string]string{"knative.dev/crd-install": "true"}}
+		yaml, err := model.ReadYamlFromUrl("https://github.com/knative/net-istio/releases/download/knative-v1.8.1/istio.yaml")
+		if err != nil {
+			t.Fatal(error.Error(err))
+		}
+
+		if err := capi.ApplyYaml(yaml); err != nil {
+			t.Fatal(error.Error(err))
+		}
+	})
+}

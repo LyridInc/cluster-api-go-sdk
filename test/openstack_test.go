@@ -273,6 +273,8 @@ func TestCreateStorageClass(t *testing.T) {
 	yaml := string(yamlByte)
 
 	if err := capi.ApplyYaml(yaml); err != nil {
+		// errMessage := error.Error(err)
+		// strings.Contains()
 		t.Fatal("Error create storage class:", error.Error(err))
 	}
 }
@@ -287,7 +289,7 @@ func TestCreatePersistentVolumeClaim(t *testing.T) {
 	}
 	capi, _ := api.NewClusterApiClient("", "./data/capi-testing.kubeconfig")
 
-	yamlByte, _ := os.ReadFile("./data/pvc.yaml")
+	yamlByte, _ := os.ReadFile("./data/custom-pvc.yaml")
 	yaml := string(yamlByte)
 
 	yamlResult, err := cl.UpdateYamlManifest(yaml, option.ManifestOption{
@@ -306,7 +308,7 @@ func TestCreatePersistentVolumeClaim(t *testing.T) {
 		t.Fatal("Write yaml error:", error.Error(err))
 	}
 
-	if err := capi.ApplyYaml(yamlResult); err != nil {
+	if err := capi.ApplyYaml(yaml); err != nil {
 		t.Fatal("Error create storage class:", error.Error(err))
 	}
 }

@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	yamlserializer "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
+	"k8s.io/apimachinery/pkg/types"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -32,6 +34,7 @@ type (
 		InitOptions      client.InitOptions
 		ConfigFile       string
 		KubeconfigFile   string
+		LabelSelector    *metav1.LabelSelector
 	}
 )
 
@@ -66,6 +69,7 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 		DynamicInterface: dd,
 		ConfigFile:       configFile,
 		KubeconfigFile:   kubeconfigFile,
+		LabelSelector:    nil,
 	}, nil
 }
 
@@ -202,6 +206,7 @@ func (c *ClusterApiClient) ApplyYaml(yamlString string) error {
 
 		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj, "apply")
 		if err != nil {
+			c.LabelSelector = nil
 			return err
 		}
 		if dri == nil {
@@ -209,13 +214,16 @@ func (c *ClusterApiClient) ApplyYaml(yamlString string) error {
 		}
 
 		if _, err := (*dri).Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
+			c.LabelSelector = nil
 			return err
 		}
 	}
 	if err != io.EOF {
+		c.LabelSelector = nil
 		return err
 	}
 
+	c.LabelSelector = nil
 	return nil
 }
 
@@ -230,6 +238,7 @@ func (c *ClusterApiClient) DeleteYaml(yamlString string) error {
 
 		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj, "delete")
 		if err != nil {
+			c.LabelSelector = nil
 			return err
 		}
 		if dri == nil {
@@ -237,13 +246,16 @@ func (c *ClusterApiClient) DeleteYaml(yamlString string) error {
 		}
 
 		if err := (*dri).Delete(context.Background(), unstructuredObj.GetName(), metav1.DeleteOptions{}); err != nil {
+			c.LabelSelector = nil
 			return err
 		}
 	}
 	if err != io.EOF {
+		c.LabelSelector = nil
 		return err
 	}
 
+	c.LabelSelector = nil
 	return nil
 }
 
@@ -326,6 +338,22 @@ func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExte
 	}
 
 	unstructuredObj := &unstructured.Unstructured{Object: unstructuredMap}
+	if c.LabelSelector != nil {
+		match := false
+		labels := unstructuredObj.GetLabels()
+		selector := c.LabelSelector.MatchLabels
+		for k, v := range selector {
+			if val, ok := labels[k]; ok {
+				if val == v {
+					match = true
+					break
+				}
+			}
+		}
+		if !match {
+			return nil, nil, nil
+		}
+	}
 
 	gr, err := restmapper.GetAPIGroupResources(c.Clientset.Discovery())
 	if err != nil {
@@ -377,4 +405,24 @@ func (c *ClusterApiClient) CreateSecret(secret v1.Secret) (*v1.Secret, error) {
 	}
 
 	return secretValue, nil
+}
+
+func (c *ClusterApiClient) CreateNamespace(namespace string) (*v1.Namespace, error) {
+	return c.Clientset.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
+}
+
+// https://stackoverflow.com/questions/57310483/whats-the-shortest-way-to-add-a-label-to-a-pod-using-the-kubernetes-go-client
+func (c *ClusterApiClient) AddLabelNamespace(namespace, label, value string) (*v1.Namespace, error) {
+	type PatchStringValue struct {
+		Op    string `json:"op"`
+		Path  string `json:"path"`
+		Value string `json:"value"`
+	}
+	payload := []PatchStringValue{{
+		Op:    "add",
+		Path:  "/metadata/labels/" + label,
+		Value: value,
+	}}
+	b, _ := json.Marshal(payload)
+	return c.Clientset.CoreV1().Namespaces().Patch(context.Background(), namespace, types.JSONPatchType, b, metav1.PatchOptions{})
 }
