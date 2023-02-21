@@ -83,6 +83,7 @@ func (c *ClusterApiClient) GetConfigValues() (map[string]interface{}, error) {
 		"certificate_authority_data": string(conf.CAData),
 		"cert_data":                  string(conf.CertData),
 		"server":                     string(conf.Host),
+		"bearer_token":               conf.BearerToken,
 	}, nil
 }
 
@@ -447,5 +448,3 @@ func (c *ClusterApiClient) GetService(serviceName, namespace string) (*v1.Servic
 
 	return service, nil
 }
-
-// kubectl describe svc istio-ingressgateway -n istio-ingress | grep -n "LoadBalancer Ingress:" | tr -d " " | cut -d ":" -f 3  | tr -d "\r"

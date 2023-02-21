@@ -269,6 +269,7 @@ func TestGetKubeconfigValues(t *testing.T) {
 		t.Log(values["cert_data"])
 		t.Log(values["certificate_authority_data"])
 		t.Log(values["server"])
+		t.Log(values["bearer_token"])
 	})
 }
 
