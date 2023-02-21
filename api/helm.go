@@ -109,6 +109,55 @@ func (c *HelmClient) CliInstall(chartName, releaseName, namespace string, settin
 	return installAction.Run(chart, values)
 }
 
+func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, timeout time.Duration, waitForJobs bool) (*release.Release, error) {
+	upgradeAction := action.NewUpgrade(c.ActionConfig)
+	upgradeAction.WaitForJobs = waitForJobs
+	upgradeAction.Timeout = timeout
+	upgradeAction.Namespace = namespace
+	upgradeAction.Install = true
+
+	chart, err := loader.Load(chartPath)
+	if err != nil {
+		return nil, err
+	}
+
+	release, err := upgradeAction.Run(releaseName, chart, nil)
+	if err != nil {
+		errMsg := error.Error(err)
+		if strings.HasSuffix(errMsg, " has no deployed releases") {
+			installAction := action.NewInstall(c.ActionConfig)
+			installAction.WaitForJobs = waitForJobs
+			installAction.Timeout = timeout
+			installAction.Namespace = namespace
+			installAction.ReleaseName = releaseName
+			return installAction.Run(chart, nil)
+		} else {
+			return nil, err
+		}
+	}
+
+	return release, nil
+}
+
+func (c *HelmClient) CliStatus(releaseName string) (map[string]interface{}, error) {
+	actionStatus := action.NewStatus(c.ActionConfig)
+	release, err := actionStatus.Run(releaseName)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"name":        release.Name,
+		"status":      release.Info.Status.String(),
+		"description": release.Info.Description,
+		"version":     release.Version,
+	}, nil
+}
+
+func (c *HelmClient) ReplaceYamlPlaceholder(yaml, placeholder, value string) string {
+	return strings.ReplaceAll(yaml, placeholder, value)
+}
+
 // setHelmValue is a helper function to convert a Helm-style value string to a map.
 func setHelmValue(vals map[string]interface{}, v string) (map[string]interface{}, error) {
 	split := strings.Split(v, "=")
@@ -142,9 +191,4 @@ func setHelmValue(vals map[string]interface{}, v string) (map[string]interface{}
 	return vals, nil
 }
 
-// helm upgrade --install "${INGRESS}" -n "${LYRID_NAMESPACE}" ingress-nginx/ingress-nginx -f ${INSTALLER_PATH}/ingress-values.yaml
-// helm upgrade --install --wait-for-jobs --timeout 5m0s vega -n "${LYRID_NAMESPACE}" ${CHART_PATH}/
-// helm status
-// http request function to be hit to Lyra API
-// replace values function in values.yaml
-// grab value from kubeconfig and config
+// http request function to hit to Lyra API

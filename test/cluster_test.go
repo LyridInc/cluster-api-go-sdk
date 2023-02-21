@@ -260,3 +260,27 @@ func TestKubectlManifestWithLabelSelector(t *testing.T) {
 		}
 	})
 }
+
+// go test ./test -v -run ^TestGetKubeconfigValues$
+func TestGetKubeconfigValues(t *testing.T) {
+	t.Run("has ca data", func(t *testing.T) {
+		capi, _ := api.NewClusterApiClient("", "./data/beta.config")
+		values, _ := capi.GetConfigValues()
+		t.Log(values["cert_data"])
+		t.Log(values["certificate_authority_data"])
+		t.Log(values["server"])
+	})
+}
+
+// go test ./test -v -run ^TestGetService$
+func TestGetService(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/capi-helm-testing.kubeconfig")
+	s, err := capi.GetService("istio-ingressgateway", "istio-ingress")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(s.Spec.LoadBalancerIP)
+	t.Log(s.Spec.ExternalIPs)
+	t.Log(s.Spec.ClusterIP)
+	t.Log(s.Status.LoadBalancer.Ingress)
+}

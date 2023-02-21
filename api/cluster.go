@@ -73,6 +73,19 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 	}, nil
 }
 
+func (c *ClusterApiClient) GetConfigValues() (map[string]interface{}, error) {
+	conf, err := clientcmd.BuildConfigFromFlags("", c.KubeconfigFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"certificate_authority_data": string(conf.CAData),
+		"cert_data":                  string(conf.CertData),
+		"server":                     string(conf.Host),
+	}, nil
+}
+
 func (c *ClusterApiClient) SetKubernetesClientsetFromConfigBytes(configBytes []byte) error {
 	conf, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
 	if err != nil {
@@ -411,7 +424,6 @@ func (c *ClusterApiClient) CreateNamespace(namespace string) (*v1.Namespace, err
 	return c.Clientset.CoreV1().Namespaces().Create(context.Background(), &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}}, metav1.CreateOptions{})
 }
 
-// https://stackoverflow.com/questions/57310483/whats-the-shortest-way-to-add-a-label-to-a-pod-using-the-kubernetes-go-client
 func (c *ClusterApiClient) AddLabelNamespace(namespace, label, value string) (*v1.Namespace, error) {
 	type PatchStringValue struct {
 		Op    string `json:"op"`
@@ -426,3 +438,14 @@ func (c *ClusterApiClient) AddLabelNamespace(namespace, label, value string) (*v
 	b, _ := json.Marshal(payload)
 	return c.Clientset.CoreV1().Namespaces().Patch(context.Background(), namespace, types.JSONPatchType, b, metav1.PatchOptions{})
 }
+
+func (c *ClusterApiClient) GetService(serviceName, namespace string) (*v1.Service, error) {
+	service, err := c.Clientset.CoreV1().Services(namespace).Get(context.Background(), serviceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return service, nil
+}
+
+// kubectl describe svc istio-ingressgateway -n istio-ingress | grep -n "LoadBalancer Ingress:" | tr -d " " | cut -d ":" -f 3  | tr -d "\r"

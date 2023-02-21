@@ -1,7 +1,9 @@
 package test
 
 import (
+	"os"
 	"testing"
+	"time"
 
 	"github.com/LyridInc/cluster-api-go-sdk/api"
 	"helm.sh/helm/v3/pkg/repo"
@@ -86,14 +88,11 @@ func TestHelmInstallChart(t *testing.T) {
 	t.Run("install ingress gateway", func(t *testing.T) {
 		capi, _ := api.NewClusterApiClient("", kubeconfig)
 
-		if _, err := capi.CreateNamespace("istio-ingress"); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := capi.AddLabelNamespace("istio-ingress", "istio-injection", "enabled"); err != nil {
+		if _, err := capi.AddLabelNamespace("istio-system", "istio-injection", "enabled"); err != nil {
 			t.Fatal(err)
 		}
 
-		release, err := hc.Install("istio/gateway", "istio-ingressgateway", "istio-ingress", true)
+		release, err := hc.Install("istio/gateway", "istio-ingressgateway", "istio-system", true)
 		if err != nil {
 			t.Fatal(error.Error(err))
 		}
@@ -119,4 +118,54 @@ func TestHelmInstallChartWithSet(t *testing.T) {
 		t.Fatal(error.Error(err))
 	}
 	t.Log(release)
+}
+
+// go test ./test -v -run ^TestHelmUpgradeChart$
+func TestHelmUpgradeChart(t *testing.T) {
+	namespace := "default"
+	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	timeout := time.Second * (5 * 60)
+
+	release, err := hc.CliUpgrade("./data/chart", "vega", namespace, timeout, true)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+	t.Log(release)
+}
+
+// go test ./test -v -run ^TestHelmReleaseStatus$
+func TestHelmReleaseStatus(t *testing.T) {
+	namespace := "default"
+	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	release, err := hc.CliStatus("redis")
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+	t.Log(release)
+}
+
+// go test ./test -v -run ^TestHelmReplaceChartValues$
+func TestHelmReplaceChartValues(t *testing.T) {
+	namespace := "default"
+	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	yamlByte, _ := os.ReadFile("./data/chart-beta/values.yaml")
+	yaml := string(yamlByte)
+	yaml = hc.ReplaceYamlPlaceholder(yaml, "VEGA_TAG", "bigbang")
+
+	t.Log(yaml)
 }
