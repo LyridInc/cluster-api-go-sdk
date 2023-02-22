@@ -109,7 +109,7 @@ func (c *HelmClient) CliInstall(chartName, releaseName, namespace string, settin
 	return installAction.Run(chart, values)
 }
 
-func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, timeout time.Duration, waitForJobs bool) (*release.Release, error) {
+func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, values map[string]interface{}, timeout time.Duration, waitForJobs bool) (*release.Release, error) {
 	upgradeAction := action.NewUpgrade(c.ActionConfig)
 	upgradeAction.WaitForJobs = waitForJobs
 	upgradeAction.Timeout = timeout
@@ -118,10 +118,17 @@ func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, timeou
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
-		return nil, err
+		chartPath, err = upgradeAction.LocateChart(chartPath, c.EnvSettings)
+		if err != nil {
+			return nil, err
+		}
+		chart, err = loader.Load(chartPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	release, err := upgradeAction.Run(releaseName, chart, nil)
+	release, err := upgradeAction.Run(releaseName, chart, values)
 	if err != nil {
 		errMsg := error.Error(err)
 		if strings.HasSuffix(errMsg, " has no deployed releases") {
@@ -130,7 +137,7 @@ func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, timeou
 			installAction.Timeout = timeout
 			installAction.Namespace = namespace
 			installAction.ReleaseName = releaseName
-			return installAction.Run(chart, nil)
+			return installAction.Run(chart, values)
 		} else {
 			return nil, err
 		}
@@ -190,5 +197,3 @@ func setHelmValue(vals map[string]interface{}, v string) (map[string]interface{}
 	}
 	return vals, nil
 }
-
-// http request function to hit to Lyra API

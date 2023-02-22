@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/LyridInc/cluster-api-go-sdk/api"
+	"helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/repo"
 )
 
@@ -131,7 +133,7 @@ func TestHelmUpgradeChart(t *testing.T) {
 
 	timeout := time.Second * (5 * 60)
 
-	release, err := hc.CliUpgrade("./data/chart", "vega", namespace, timeout, true)
+	release, err := hc.CliUpgrade("./data/chart", "vega", namespace, nil, timeout, true)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
@@ -168,4 +170,50 @@ func TestHelmReplaceChartValues(t *testing.T) {
 	yaml = hc.ReplaceYamlPlaceholder(yaml, "VEGA_TAG", "bigbang")
 
 	t.Log(yaml)
+}
+
+// go test ./test -v -run ^TestHelmUpgradeChartValues$
+func TestHelmUpgradeChartValues(t *testing.T) {
+	namespace := "default"
+	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	if err := hc.AddRepo(repo.Entry{
+		Name: "ingress-nginx",
+		URL:  "https://kubernetes.github.io/ingress-nginx/",
+	}); err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	yamlByte, err := os.ReadFile("./data/vega/ingress-values.yaml")
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+	yaml := hc.ReplaceYamlPlaceholder(string(yamlByte), "{{ $INGRESS }}", "test-ingress")
+	file, err := os.Create("./data/vega/ingress-values-f.yaml")
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	file.Write([]byte(yaml))
+	file.Close()
+
+	timeout := time.Second * (5 * 60)
+
+	option := &values.Options{
+		ValueFiles: []string{"./data/vega/ingress-values-f.yaml"},
+	}
+	provider := getter.All(hc.EnvSettings)
+	values, err := option.MergeValues(provider)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+	release, err := hc.CliUpgrade("ingress-nginx/ingress-nginx", "test-ingress", namespace, values, timeout, true)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+	t.Log(release)
 }
