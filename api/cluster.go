@@ -22,6 +22,7 @@ import (
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client"
@@ -73,6 +74,49 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 		KubeconfigFile:   kubeconfigFile,
 		LabelSelector:    nil,
 	}, nil
+}
+
+func (c *ClusterApiClient) SetRateLimit(burst int, qps float32) error {
+	cl, err := client.New(c.ConfigFile)
+	if err != nil {
+		log.Fatal("Client config error:", err)
+		return err
+	}
+
+	var conf *rest.Config
+	if c.ConfigBytes == nil {
+		conf, err = clientcmd.BuildConfigFromFlags("", c.KubeconfigFile)
+		if err != nil {
+			log.Fatal("Build config from flags error:", err)
+			return err
+		}
+	} else {
+		conf, err = clientcmd.RESTConfigFromKubeConfig(c.ConfigBytes)
+		if err != nil {
+			return err
+		}
+	}
+
+	conf.Burst = burst
+	conf.QPS = qps
+
+	clientset, err := kubernetes.NewForConfig(conf)
+	if err != nil {
+		log.Fatal("Clientset config error:", err)
+		return err
+	}
+
+	dd, err := dynamic.NewForConfig(conf)
+	if err != nil {
+		log.Fatal("Dynamic interface config error:", err)
+		return err
+	}
+
+	c.DynamicInterface = dd
+	c.Clientset = clientset
+	c.Client = cl
+
+	return nil
 }
 
 func (c *ClusterApiClient) GetConfigValues(configBytes []byte) (map[string]interface{}, error) {
