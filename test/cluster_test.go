@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -265,7 +266,7 @@ func TestKubectlManifestWithLabelSelector(t *testing.T) {
 func TestGetKubeconfigValues(t *testing.T) {
 	t.Run("has ca data", func(t *testing.T) {
 		capi, _ := api.NewClusterApiClient("", "./data/beta.config")
-		b, _ := os.ReadFile("./data/beta.config")
+		b, _ := os.ReadFile("./data/experiment.kubeconfig")
 		values, _ := capi.GetConfigValues(b)
 		t.Log(values["cert_data"])
 		t.Log(values["certificate_authority_data"])
@@ -285,4 +286,18 @@ func TestGetService(t *testing.T) {
 	t.Log(s.Spec.ExternalIPs)
 	t.Log(s.Spec.ClusterIP)
 	t.Log(s.Status.LoadBalancer.Ingress)
+}
+
+// go test ./test -v -run ^TestGetSecret$
+func TestGetSecret(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/experiment.kubeconfig")
+	s, err := capi.GetSecret("lyrid-admin", "kube-system")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jsonData, err := json.Marshal(s.Data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(jsonData))
 }

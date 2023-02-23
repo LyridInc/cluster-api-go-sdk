@@ -125,6 +125,8 @@ func (c *ClusterApiClient) GetConfigValues(configBytes []byte) (map[string]inter
 		return nil, err
 	}
 
+	fmt.Println(conf)
+
 	return map[string]interface{}{
 		"certificate_authority_data": string(conf.CAData),
 		"cert_data":                  string(conf.CertData),
@@ -497,4 +499,13 @@ func (c *ClusterApiClient) GetService(serviceName, namespace string) (*v1.Servic
 	}
 
 	return service, nil
+}
+
+func (c *ClusterApiClient) GetSecret(secretName, namespace string) (*v1.Secret, error) {
+	secret, err := c.Clientset.CoreV1().Secrets(namespace).Get(context.Background(), secretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return secret, nil
 }
