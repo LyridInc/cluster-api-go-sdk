@@ -265,7 +265,8 @@ func TestKubectlManifestWithLabelSelector(t *testing.T) {
 func TestGetKubeconfigValues(t *testing.T) {
 	t.Run("has ca data", func(t *testing.T) {
 		capi, _ := api.NewClusterApiClient("", "./data/beta.config")
-		values, _ := capi.GetConfigValues()
+		b, _ := os.ReadFile("./data/beta.config")
+		values, _ := capi.GetConfigValues(b)
 		t.Log(values["cert_data"])
 		t.Log(values["certificate_authority_data"])
 		t.Log(values["server"])

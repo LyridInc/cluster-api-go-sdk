@@ -36,6 +36,7 @@ type (
 		ConfigFile       string
 		KubeconfigFile   string
 		LabelSelector    *metav1.LabelSelector
+		ConfigBytes      []byte
 	}
 )
 
@@ -74,8 +75,8 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 	}, nil
 }
 
-func (c *ClusterApiClient) GetConfigValues() (map[string]interface{}, error) {
-	conf, err := clientcmd.BuildConfigFromFlags("", c.KubeconfigFile)
+func (c *ClusterApiClient) GetConfigValues(configBytes []byte) (map[string]interface{}, error) {
+	conf, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +108,7 @@ func (c *ClusterApiClient) SetKubernetesClientsetFromConfigBytes(configBytes []b
 
 	c.Clientset = clientset
 	c.DynamicInterface = dd
+	c.ConfigBytes = configBytes
 	return nil
 }
 
