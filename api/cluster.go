@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/LyridInc/cluster-api-go-sdk/option"
@@ -229,6 +230,11 @@ func (c *ClusterApiClient) ApplyYaml(yamlString string) error {
 
 		if _, err := (*dri).Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
 			c.LabelSelector = nil
+			if unstructuredObj.GetKind() == "namespace" {
+				if !strings.Contains(error.Error(err), ` already exists`) {
+					continue
+				}
+			}
 			return err
 		}
 	}
