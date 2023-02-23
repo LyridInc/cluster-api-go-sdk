@@ -232,10 +232,8 @@ func (c *ClusterApiClient) ApplyYaml(yamlString string) error {
 
 		if _, err := (*dri).Create(context.Background(), unstructuredObj, metav1.CreateOptions{}); err != nil {
 			c.LabelSelector = nil
-			if unstructuredObj.GetKind() == "Namespace" {
-				if !strings.Contains(error.Error(err), ` already exists`) {
-					continue
-				}
+			if !strings.Contains(error.Error(err), ` already exists`) {
+				continue
 			}
 			return err
 		}
