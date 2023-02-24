@@ -58,7 +58,7 @@ func NewHelmClient(kubeconfigFile, namespace string) (*HelmClient, error) {
 	settings := cli.New()
 	settings.KubeConfig = kubeconfigFile
 	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {}); err != nil {
+	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {}); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +95,7 @@ func NewHelmClientFromConfigBytes(configBytes []byte, namespace string) (*HelmCl
 	if err := actionConfig.Init(&SimpleRESTClientGetter{
 		Namespace:  namespace,
 		KubeConfig: string(configBytes),
-	}, settings.Namespace(), os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {}); err != nil {
+	}, namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {}); err != nil {
 		return nil, err
 	}
 

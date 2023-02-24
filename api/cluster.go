@@ -125,8 +125,6 @@ func (c *ClusterApiClient) GetConfigValues(configBytes []byte) (map[string]inter
 		return nil, err
 	}
 
-	fmt.Println(conf)
-
 	return map[string]interface{}{
 		"certificate_authority_data": string(conf.CAData),
 		"cert_data":                  string(conf.CertData),

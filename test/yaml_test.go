@@ -1,7 +1,10 @@
 package test
 
 import (
+	"archive/zip"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -77,4 +80,32 @@ func TestUpdateYaml(t *testing.T) {
 	if err := os.WriteFile("./data/test-daemonset.yaml", []byte(yamlResult), 0644); err != nil {
 		t.Fatal("Write yaml file error:", url, error.Error(err))
 	}
+}
+
+// go test ./test -v -run ^TestUpdateChartYaml$
+func TestUpdateChartYaml(t *testing.T) {
+	zipFile, _ := zip.OpenReader("./data/chart-beta.zip")
+	defer zipFile.Close()
+
+	for _, file := range zipFile.File {
+		path := "./data/zipped/" + file.Name
+
+		if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+
+		if file.FileInfo().IsDir() {
+			continue
+		}
+
+		fileReader, _ := file.Open()
+		defer fileReader.Close()
+
+		buffer, _ := io.ReadAll(fileReader)
+		if err := os.WriteFile(path, buffer, file.Mode()); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	defer os.RemoveAll("./data/zipped")
 }

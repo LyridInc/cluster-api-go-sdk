@@ -15,8 +15,8 @@ import (
 
 // go test ./test -v -run ^TestHelmGetRelease$
 func TestHelmGetRelease(t *testing.T) {
-	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
-	hc, err := api.NewHelmClient("./data/capi-testing.kubeconfig", namespace)
+	namespace := "default"
+	hc, err := api.NewHelmClient("./data/experiment.kubeconfig", namespace)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
@@ -32,7 +32,7 @@ func TestHelmGetRelease(t *testing.T) {
 	})
 
 	t.Run("get release by name", func(t *testing.T) {
-		release, err := hc.Client.GetRelease("vega")
+		release, err := hc.Client.GetRelease("redis")
 		if err != nil {
 			t.Fatal(error.Error(err))
 		}
