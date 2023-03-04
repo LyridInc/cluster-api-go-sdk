@@ -149,27 +149,27 @@ func (c *OpenstackClient) ValidateQuotas() (bool, error) {
 	}
 
 	floatingIpQuota := quotas.Quota.FloatingIp
-	if floatingIpQuota.Used >= floatingIpQuota.Limit {
+	if floatingIpQuota.Limit != -1 && floatingIpQuota.Used >= floatingIpQuota.Limit {
 		return false, fmt.Errorf("floating ip quota limit exceeded")
 	}
 	networkQuota := quotas.Quota.Network
-	if networkQuota.Used >= networkQuota.Limit {
+	if networkQuota.Limit != -1 && networkQuota.Used >= networkQuota.Limit {
 		return false, fmt.Errorf("network quota limit exceeded")
 	}
 	routerQuota := quotas.Quota.Router
-	if routerQuota.Used >= routerQuota.Limit {
+	if routerQuota.Limit != -1 && routerQuota.Used >= routerQuota.Limit {
 		return false, fmt.Errorf("router quota limit exceeded")
 	}
 	securityGroupQuota := quotas.Quota.SecurityGroup
-	if securityGroupQuota.Used+2 >= securityGroupQuota.Limit {
+	if securityGroupQuota.Limit != -1 && securityGroupQuota.Used+2 >= securityGroupQuota.Limit {
 		return false, fmt.Errorf("security group quota limit exceeded")
 	}
 	securityGroupRuleQuota := quotas.Quota.SecurityGroupRule
-	if securityGroupRuleQuota.Used+10 >= securityGroupRuleQuota.Limit {
+	if securityGroupRuleQuota.Limit != -1 && securityGroupRuleQuota.Used+10 >= securityGroupRuleQuota.Limit {
 		return false, fmt.Errorf("security group rules quota limit exceeded")
 	}
 	portQuota := quotas.Quota.Port
-	if portQuota.Used+3 >= portQuota.Limit {
+	if portQuota.Limit != -1 && portQuota.Used+3 >= portQuota.Limit {
 		return false, fmt.Errorf("port quota limit exceeded")
 	}
 
