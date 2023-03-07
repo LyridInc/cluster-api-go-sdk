@@ -303,6 +303,9 @@ func (c *ClusterApiClient) DeleteYaml(yamlString string) error {
 		dri, unstructuredObj, err := c.createDynamicResourceInterface(rawObj, "delete")
 		if err != nil {
 			c.LabelSelector = nil
+			if strings.Contains(error.Error(err), "no matches ") {
+				continue
+			}
 			return err
 		}
 		if dri == nil {
