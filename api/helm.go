@@ -188,6 +188,17 @@ func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, values
 	return release, nil
 }
 
+func (c *HelmClient) CliDelete(releaseName string) (*release.UninstallReleaseResponse, error) {
+	deleteAction := action.NewUninstall(c.ActionConfig)
+
+	response, err := deleteAction.Run(releaseName)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func (c *HelmClient) CliStatus(releaseName string) (map[string]interface{}, error) {
 	actionStatus := action.NewStatus(c.ActionConfig)
 	release, err := actionStatus.Run(releaseName)
