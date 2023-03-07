@@ -277,8 +277,8 @@ func TestGetKubeconfigValues(t *testing.T) {
 
 // go test ./test -v -run ^TestGetService$
 func TestGetService(t *testing.T) {
-	capi, _ := api.NewClusterApiClient("", "./data/capi-helm-testing.kubeconfig")
-	s, err := capi.GetService("istio-ingressgateway", "istio-ingress")
+	capi, _ := api.NewClusterApiClient("", "./data/capi-delta-vega.kubeconfig")
+	s, err := capi.GetService("ingress-u9o7z44y-ingress-nginx-controller", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
 	if err != nil {
 		t.Fatal(err)
 	}

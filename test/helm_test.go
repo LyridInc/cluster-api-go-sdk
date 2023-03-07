@@ -142,8 +142,8 @@ func TestHelmUpgradeChart(t *testing.T) {
 
 // go test ./test -v -run ^TestHelmReleaseStatus$
 func TestHelmReleaseStatus(t *testing.T) {
-	namespace := "default"
-	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+	kubeconfig := "./data/capi-delta-vega.kubeconfig"
 	hc, err := api.NewHelmClient(kubeconfig, namespace)
 	if err != nil {
 		t.Fatal(error.Error(err))
@@ -153,7 +153,7 @@ func TestHelmReleaseStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
-	t.Log(release)
+	t.Log(release["status"] == "deployed")
 }
 
 // go test ./test -v -run ^TestHelmReplaceChartValues$
