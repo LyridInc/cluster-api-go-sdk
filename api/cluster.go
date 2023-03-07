@@ -311,7 +311,7 @@ func (c *ClusterApiClient) DeleteYaml(yamlString string) error {
 
 		if err := (*dri).Delete(context.Background(), unstructuredObj.GetName(), metav1.DeleteOptions{}); err != nil {
 			c.LabelSelector = nil
-			if strings.Contains(error.Error(err), ` not found`) || strings.HasPrefix(error.Error(err), "no matches ") {
+			if strings.Contains(error.Error(err), ` not found`) || strings.Contains(error.Error(err), "no matches ") {
 				continue
 			}
 			return err
