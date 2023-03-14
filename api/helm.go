@@ -12,6 +12,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -124,6 +125,26 @@ func (c *HelmClient) Install(chartName, releaseName, namespace string, wait bool
 	}
 	opt := helm.GenericHelmOptions{}
 	return c.Client.InstallOrUpgradeChart(context.Background(), &spec, &opt)
+}
+
+func (c *HelmClient) CliAddRepo(entry repo.Entry) error {
+	r, err := repo.NewChartRepository(&entry, getter.All(c.EnvSettings))
+	if err != nil {
+		return err
+	}
+
+	if _, err := r.DownloadIndexFile(); err != nil {
+		return err
+	}
+
+	var f repo.File
+	f.Update(&entry)
+
+	if err := f.WriteFile(c.EnvSettings.RepositoryConfig, 0644); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *HelmClient) CliInstall(chartName, releaseName, namespace string, settingValues []string) (*release.Release, error) {

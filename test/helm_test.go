@@ -174,14 +174,14 @@ func TestHelmReplaceChartValues(t *testing.T) {
 
 // go test ./test -v -run ^TestHelmUpgradeChartValues$
 func TestHelmUpgradeChartValues(t *testing.T) {
-	namespace := "default"
-	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+	kubeconfig := "./data/lyr-kube-qx4dhr.kubeconfig"
 	hc, err := api.NewHelmClient(kubeconfig, namespace)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
 
-	if err := hc.AddRepo(repo.Entry{
+	if err := hc.CliAddRepo(repo.Entry{
 		Name: "ingress-nginx",
 		URL:  "https://kubernetes.github.io/ingress-nginx/",
 	}); err != nil {
@@ -211,7 +211,7 @@ func TestHelmUpgradeChartValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
-	release, err := hc.CliUpgrade("ingress-nginx/ingress-nginx", "test-ingress", namespace, values, timeout, true)
+	release, err := hc.CliUpgrade("ingress-nginx/ingress-nginx", "ingress-tp36ousx", namespace, values, timeout, true)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
