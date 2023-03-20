@@ -35,6 +35,8 @@ type (
 		ApplicationCredentialName   string `yaml:"application_credential_name" json:"application_credential_name"`
 		ApplicationCredentialId     string `yaml:"application_credential_id" json:"application_credential_id"`
 		ApplicationCredentialSecret string `yaml:"application_credential_secret" json:"application_credential_secret"`
+		Username                    string `yaml:"username" json:"username"`
+		Password                    string `yaml:"password" json:"password"`
 	}
 	Clouds struct {
 		Openstack Openstack `yaml:"openstack" json:"openstack"`
@@ -65,6 +67,15 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 	// set env.rc variables
 	os.Setenv("CAPO_AUTH_URL", authOs.AuthUrl)
 	openstackConf = openstackConf + `auth-url="` + authOs.AuthUrl + "\"\n"
+
+	if authOs.Username != "" {
+		os.Setenv("CAPO_USERNAME", authOs.Username)
+		openstackConf = openstackConf + `username="` + authOs.Username + "\"\n"
+	}
+	if authOs.Password != "" {
+		os.Setenv("CAPO_PASSWORD", authOs.Password)
+		openstackConf = openstackConf + `password="` + authOs.Password + "\"\n"
+	}
 
 	os.Setenv("CAPO_PROJECT_ID", authOs.ProjectId)
 	openstackConf = openstackConf + `tenant-id="` + authOs.ProjectId + "\"\n"
