@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
@@ -470,6 +472,46 @@ func (c *ClusterApiClient) createDynamicResourceInterface(rawObj runtime.RawExte
 
 func (c *ClusterApiClient) CreateSecret(secret v1.Secret) (*v1.Secret, error) {
 	secretValue, err := c.Clientset.CoreV1().Secrets(secret.ObjectMeta.Namespace).Create(context.TODO(), &secret, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return secretValue, nil
+}
+
+func (c *ClusterApiClient) CreateDockerRegistrySecret(secretName, namespace string, args model.CreateDockerRegistrySecretArgs) (*v1.Secret, error) {
+	secretObj := v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1.SchemeGroupVersion.String(),
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+		},
+		Type: v1.SecretTypeDockerConfigJson,
+		Data: map[string][]byte{},
+	}
+
+	dockerConfigAuth := model.DockerConfigEntry{
+		Username: args.Username,
+		Password: args.Password,
+		Email:    args.Email,
+		Auth:     base64.StdEncoding.EncodeToString([]byte(args.Username + ":" + args.Password)),
+	}
+
+	dockerConfigJSON := model.DockerConfigJSON{
+		Auths: map[string]model.DockerConfigEntry{args.Server: dockerConfigAuth},
+	}
+
+	b, err := json.Marshal(dockerConfigJSON)
+	if err != nil {
+		return nil, err
+	}
+
+	secretObj.Data[v1.DockerConfigJsonKey] = b
+
+	secretValue, err := c.Clientset.CoreV1().Secrets(secretObj.ObjectMeta.Namespace).Create(context.TODO(), &secretObj, metav1.CreateOptions{})
 	if err != nil {
 		return nil, err
 	}

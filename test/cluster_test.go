@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // export $(< test.env)
@@ -300,4 +302,43 @@ func TestGetSecret(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log(string(jsonData))
+}
+
+// go test ./test -v -run ^TestCreateRegistrySecret$
+func TestCreateRegistrySecret(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
+
+	secretName := "lyridlocal.key"
+	secretNs := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+	dockerUsername := "<docker-username>"
+	dockerPassword := "<docker-password>"
+	dockerServer := "<docker-server>"
+
+	secretValue, err := capi.CreateDockerRegistrySecret(secretName, secretNs, model.CreateDockerRegistrySecretArgs{
+		Username: dockerUsername,
+		Password: dockerPassword,
+		Email:    "admin@mail.io",
+		Server:   dockerServer,
+	})
+	if err != nil {
+		t.Fatal("Error create secret:", error.Error(err))
+	}
+	x := (*secretValue).Data
+	t.Log(x)
+
+}
+
+// go test ./test -v -run ^TestPatchServiceAccount$
+func TestPatchServiceAccount(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
+
+	patch := []byte("{\"imagePullSecrets\": [{\"name\": \"lyridlocaltest.key\"}]}")
+	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+
+	sa, err := capi.Clientset.CoreV1().ServiceAccounts(namespace).Patch(context.Background(), "default", types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+	if err != nil {
+		t.Fatal("Error patch service accounts:", error.Error(err))
+	}
+
+	t.Log(sa)
 }
