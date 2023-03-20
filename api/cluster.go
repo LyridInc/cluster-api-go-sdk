@@ -555,3 +555,9 @@ func (c *ClusterApiClient) GetSecret(secretName, namespace string) (*v1.Secret, 
 
 	return secret, nil
 }
+
+func (c *ClusterApiClient) PatchServiceAccount(name, namespace string, patch []byte) (*v1.ServiceAccount, error) {
+	sa, err := c.Clientset.CoreV1().ServiceAccounts(namespace).Patch(context.Background(), name, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+
+	return sa, err
+}
