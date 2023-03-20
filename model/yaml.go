@@ -92,14 +92,20 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 		openstackConf = openstackConf + `ca-file="/etc/certs/cacert"` + "\n"
 	}
 
-	os.Setenv("CAPO_APPLICATION_CREDENTIAL_NAME", authOs.ApplicationCredentialName)
-	openstackConf = openstackConf + `application-credential-name="` + authOs.ApplicationCredentialName + "\"\n"
+	if authOs.ApplicationCredentialName != "" {
+		os.Setenv("CAPO_APPLICATION_CREDENTIAL_NAME", authOs.ApplicationCredentialName)
+		openstackConf = openstackConf + `application-credential-name="` + authOs.ApplicationCredentialName + "\"\n"
+	}
 
-	os.Setenv("CAPO_APPLICATION_CREDENTIAL_ID", authOs.ApplicationCredentialId)
-	openstackConf = openstackConf + `application-credential-id="` + authOs.ApplicationCredentialId + "\"\n"
+	if authOs.ApplicationCredentialId != "" {
+		os.Setenv("CAPO_APPLICATION_CREDENTIAL_ID", authOs.ApplicationCredentialId)
+		openstackConf = openstackConf + `application-credential-id="` + authOs.ApplicationCredentialId + "\"\n"
+	}
 
-	os.Setenv("CAPO_APPLICATION_CREDENTIAL_SECRET", authOs.ApplicationCredentialSecret)
-	openstackConf = openstackConf + `application-credential-secret="` + authOs.ApplicationCredentialSecret + "\"\n"
+	if authOs.ApplicationCredentialSecret != "" {
+		os.Setenv("CAPO_APPLICATION_CREDENTIAL_SECRET", authOs.ApplicationCredentialSecret)
+		openstackConf = openstackConf + `application-credential-secret="` + authOs.ApplicationCredentialSecret + "\"\n"
+	}
 
 	if cloudOs.LbMethod != "" ||
 		cloudOs.CreateMonitor ||
