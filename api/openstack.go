@@ -29,57 +29,64 @@ type (
 	}
 
 	OpenstackCredential struct {
-		ApplicationCredentialName   string
-		ApplicationCredentialId     string
-		ApplicationCredentialSecret string
+		ApplicationCredentialName   string `json:"name"`
+		ApplicationCredentialId     string `json:"id"`
+		ApplicationCredentialSecret string `json:"secret"`
+	}
+
+	OpenstackPassword struct {
+		User map[string]interface{} `json:"user"`
+	}
+
+	OpenstackIdentity struct {
+		Methods               []string            `json:"methods"`
+		Password              OpenstackPassword   `json:"password"`
+		ApplicationCredential OpenstackCredential `json:"application_credential"`
+	}
+
+	OpenstackAuth struct {
+		Identity OpenstackIdentity `json:"identity"`
 	}
 )
 
-func (c *OpenstackClient) Authenticate(credential OpenstackCredential) error {
+func (c *OpenstackClient) Authenticate(auth OpenstackAuth) (*http.Response, error) {
 	token := os.Getenv("OS_TOKEN")
 	if token != "" {
 		c.AuthToken = token
 		response, err := c.CheckAuthToken()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		responseError, ok := response["error"]
 		if !ok {
-			return nil
+			return nil, nil
 		}
 		responseErrorMap := responseError.(map[string]interface{})
 		code, ok := responseErrorMap["code"]
 		if ok {
 			statusCode := code.(float64)
 			if statusCode != 401 {
-				return fmt.Errorf("%v", responseError)
+				return nil, fmt.Errorf("%v", responseError)
 			}
 		}
 	}
 
 	url := c.AuthEndpoint + "/v3/auth/tokens"
-	requestBody := []byte(`{
-		"auth": {
-			"identity": {
-				"methods": ["application_credential"],
-				"application_credential": {
-					"id": "` + credential.ApplicationCredentialId + `",
-					"name": "` + credential.ApplicationCredentialName + `",
-					"secret": "` + credential.ApplicationCredentialSecret + `"
-				}
-			}
-		}
-	}`)
+	b, _ := json.Marshal(map[string]interface{}{
+		"auth": auth,
+	})
+	requestBody := b
+
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	request.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		return err
+		return response, err
 	}
 	defer response.Body.Close()
 
@@ -91,7 +98,7 @@ func (c *OpenstackClient) Authenticate(credential OpenstackCredential) error {
 		}
 	}
 
-	return nil
+	return response, nil
 }
 
 func (c *OpenstackClient) CheckAuthToken() (map[string]interface{}, error) {
