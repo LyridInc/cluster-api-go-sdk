@@ -22,10 +22,11 @@ import (
 
 type (
 	OpenstackClient struct {
-		NetworkEndpoint string
-		AuthEndpoint    string
-		AuthToken       string
-		ProjectId       string
+		NetworkEndpoint      string
+		LoadBalancerEndpoint string
+		AuthEndpoint         string
+		AuthToken            string
+		ProjectId            string
 	}
 
 	OpenstackCredential struct {
@@ -71,9 +72,27 @@ func (c *OpenstackClient) Authenticate(auth OpenstackAuth) (*http.Response, erro
 		}
 	}
 
+	authMap := map[string]interface{}{}
+	authByte, _ := json.Marshal(auth)
+	json.Unmarshal(authByte, &authMap)
+
+	if identity, ok := authMap["identity"]; ok {
+		if len(auth.Identity.Methods) > 0 {
+			identityMap := identity.(map[string]interface{})
+			switch auth.Identity.Methods[0] {
+			case "password":
+				delete(identityMap, "application_credential")
+
+			case "application_credential":
+				delete(identityMap, "password")
+			}
+			authMap["identity"] = identityMap
+		}
+	}
+
 	url := c.AuthEndpoint + "/v3/auth/tokens"
 	b, _ := json.Marshal(map[string]interface{}{
-		"auth": auth,
+		"auth": authMap,
 	})
 	requestBody := b
 
@@ -156,31 +175,59 @@ func (c *OpenstackClient) ValidateQuotas() (bool, error) {
 	}
 
 	floatingIpQuota := quotas.Quota.FloatingIp
-	if floatingIpQuota.Limit != -1 && floatingIpQuota.Used >= floatingIpQuota.Limit {
+	if floatingIpQuota.Limit != -1 && floatingIpQuota.Limit != 0 && floatingIpQuota.Used >= floatingIpQuota.Limit {
 		return false, fmt.Errorf("floating ip quota limit exceeded")
 	}
 	networkQuota := quotas.Quota.Network
-	if networkQuota.Limit != -1 && networkQuota.Used >= networkQuota.Limit {
+	if networkQuota.Limit != -1 && networkQuota.Limit != 0 && networkQuota.Used >= networkQuota.Limit {
 		return false, fmt.Errorf("network quota limit exceeded")
 	}
 	routerQuota := quotas.Quota.Router
-	if routerQuota.Limit != -1 && routerQuota.Used >= routerQuota.Limit {
+	if routerQuota.Limit != -1 && routerQuota.Limit != 0 && routerQuota.Used >= routerQuota.Limit {
 		return false, fmt.Errorf("router quota limit exceeded")
 	}
 	securityGroupQuota := quotas.Quota.SecurityGroup
-	if securityGroupQuota.Limit != -1 && securityGroupQuota.Used+2 >= securityGroupQuota.Limit {
+	if securityGroupQuota.Limit != -1 && securityGroupQuota.Limit != 0 && securityGroupQuota.Used+2 >= securityGroupQuota.Limit {
 		return false, fmt.Errorf("security group quota limit exceeded")
 	}
 	securityGroupRuleQuota := quotas.Quota.SecurityGroupRule
-	if securityGroupRuleQuota.Limit != -1 && securityGroupRuleQuota.Used+10 >= securityGroupRuleQuota.Limit {
+	if securityGroupRuleQuota.Limit != -1 && securityGroupRuleQuota.Limit != 0 && securityGroupRuleQuota.Used+10 >= securityGroupRuleQuota.Limit {
 		return false, fmt.Errorf("security group rules quota limit exceeded")
 	}
 	portQuota := quotas.Quota.Port
-	if portQuota.Limit != -1 && portQuota.Used+3 >= portQuota.Limit {
+	if portQuota.Limit != -1 && portQuota.Limit != 0 && portQuota.Used+3 >= portQuota.Limit {
 		return false, fmt.Errorf("port quota limit exceeded")
 	}
 
 	return true, nil
+}
+
+func (c *OpenstackClient) GetLoadBalancer(loadBalancerId string) (*model.LoadBalancerResponse, error) {
+	url := c.LoadBalancerEndpoint + "/v2/lbaas/loadbalancers/" + loadBalancerId
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	loadBalancer := model.LoadBalancerResponse{}
+	json.Unmarshal(body, &loadBalancer)
+
+	if loadBalancer.LoadBalancer.ID == "" {
+		return nil, nil
+	}
+
+	return &loadBalancer, nil
 }
 
 func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.ManifestOption) (string, error) {

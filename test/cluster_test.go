@@ -279,8 +279,8 @@ func TestGetKubeconfigValues(t *testing.T) {
 
 // go test ./test -v -run ^TestGetService$
 func TestGetService(t *testing.T) {
-	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
-	s, err := capi.GetService("eventing-webhook", "knative-eventing")
+	capi, _ := api.NewClusterApiClient("", "./data/capi-az-local.kubeconfig")
+	s, err := capi.GetService("ingress-dftw8qey-ingress-nginx-controller", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,6 +288,7 @@ func TestGetService(t *testing.T) {
 	t.Log(s.Spec.ExternalIPs)
 	t.Log(s.Spec.ClusterIP)
 	t.Log(s.Status.LoadBalancer.Ingress)
+	t.Log(s.Annotations["loadbalancer.openstack.org/load-balancer-id"])
 }
 
 // go test ./test -v -run ^TestGetSecret$
