@@ -124,7 +124,25 @@ func (c *HelmClient) Install(chartName, releaseName, namespace string, wait bool
 		Timeout:         c.Timeout,
 	}
 	opt := helm.GenericHelmOptions{}
-	return c.Client.InstallOrUpgradeChart(context.Background(), &spec, &opt)
+	var finalError error
+
+	retry := 0
+	for {
+		if retry >= 3 {
+			break
+		}
+
+		release, err := c.Client.InstallOrUpgradeChart(context.Background(), &spec, &opt)
+		finalError = err
+		if err != nil {
+			fmt.Println("Retry installing ", releaseName+"...")
+			retry = retry + 1
+		} else {
+			return release, nil
+		}
+	}
+
+	return nil, finalError
 }
 
 func (c *HelmClient) CliAddRepo(entry repo.Entry) error {

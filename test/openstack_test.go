@@ -31,10 +31,15 @@ func TestClientCredentialAuthentication(t *testing.T) {
 			},
 		},
 	}
-
-	if _, err := cl.Authenticate(credential); err != nil {
+	res, err := cl.Authenticate(credential)
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	b, _ := io.ReadAll(res.Body)
+
+	t.Log(string(b))
+
 	if _, err := cl.Authenticate(credential); err != nil {
 		t.Fatal("#2: ", err)
 	}

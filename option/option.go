@@ -27,6 +27,7 @@ type (
 
 	InfrastructureKindSpecOption struct {
 		AllowAllInClusterTraffic bool
+		NodeCidr                 string
 	}
 
 	StorageClassKindOption struct {
