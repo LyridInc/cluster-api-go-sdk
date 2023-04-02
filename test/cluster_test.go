@@ -19,15 +19,15 @@ import (
 
 // go test ./test -v -run ^TestGenerateClusterTemplate$
 func TestGenerateClusterTemplate(t *testing.T) {
-	yamlByte, _ := os.ReadFile("./data/clouds.yaml")
+	yamlByte, _ := os.ReadFile("./data/elitery-clouds.yaml")
 	cloudsYaml := model.CloudsYaml{}
 	cloudsYaml.Parse(yamlByte)
 	opt := option.OpenstackGenerateClusterOptions{
-		ControlPlaneMachineFlavor: "SS2.2",
-		NodeMachineFlavor:         "SM8.4",
-		ExternalNetworkId:         "79241ddc-c51b-4677-a763-f48c60870923",
-		ImageName:                 "ubuntu-2004-kube-v1.24.8",
-		SshKeyName:                "kube-key",
+		ControlPlaneMachineFlavor: "a2.medium-1",
+		NodeMachineFlavor:         "a2.large-2",
+		ExternalNetworkId:         "f30c9e3d-757b-43fb-b4e0-da3ab36708a4",
+		ImageName:                 "Ubuntu-22.04-eranyaImage-v1.0",
+		SshKeyName:                "eranya-ssh",
 		DnsNameServers:            "8.8.8.8",
 		FailureDomain:             "az-01", // nova/az-01
 		IgnoreVolumeAZ:            true,
@@ -37,7 +37,7 @@ func TestGenerateClusterTemplate(t *testing.T) {
 	infrastructure := "openstack"
 	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 
-	clusterName := "capi-local-test"
+	clusterName := "capi-elitery"
 	ready, err := capi.InfrastructureReadiness(infrastructure)
 	if !ready && err == nil {
 		t.Log("initialize infrastructure")
@@ -48,7 +48,7 @@ func TestGenerateClusterTemplate(t *testing.T) {
 	clusterOpt := option.GenerateWorkloadClusterOptions{
 		ClusterName:              clusterName,
 		KubernetesVersion:        "v1.24.8",
-		WorkerMachineCount:       3,
+		WorkerMachineCount:       1,
 		ControlPlaneMachineCount: 1,
 		InfrastructureProvider:   infrastructure,
 		Flavor:                   "external-cloud-provider",

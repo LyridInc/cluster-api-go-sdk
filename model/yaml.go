@@ -32,6 +32,7 @@ type (
 		ProjectId                   string `yaml:"project_id" json:"project_id"`
 		ProjectName                 string `yaml:"project_name" json:"project_name"`
 		UserDomainName              string `yaml:"user_domain_name" json:"user_domain_name"`
+		UserDomainId                string `yaml:"user_domain_id" json:"user_domain_id"`
 		ApplicationCredentialName   string `yaml:"application_credential_name" json:"application_credential_name"`
 		ApplicationCredentialId     string `yaml:"application_credential_id" json:"application_credential_id"`
 		ApplicationCredentialSecret string `yaml:"application_credential_secret" json:"application_credential_secret"`
@@ -85,6 +86,9 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 
 	os.Setenv("CAPO_DOMAIN_NAME", authOs.UserDomainName)
 	openstackConf = openstackConf + `domain-name="` + authOs.UserDomainName + "\"\n"
+
+	os.Setenv("CAPO_DOMAIN_ID", authOs.UserDomainId)
+	openstackConf = openstackConf + `domain-id="` + authOs.UserDomainId + "\"\n"
 
 	caCertB64 := base64.StdEncoding.EncodeToString([]byte(cloudOs.CaCert + "\n"))
 	os.Setenv("OPENSTACK_CLOUD_CACERT_B64", caCertB64)
