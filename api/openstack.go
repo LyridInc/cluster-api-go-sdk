@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
@@ -22,6 +23,7 @@ import (
 
 type (
 	OpenstackClient struct {
+		MagnumEndpoint       string
 		NetworkEndpoint      string
 		LoadBalancerEndpoint string
 		AuthEndpoint         string
@@ -45,8 +47,18 @@ type (
 		ApplicationCredential OpenstackCredential `json:"application_credential"`
 	}
 
+	OpenstackProject struct {
+		Name   *string                 `json:"name,omitempty"`
+		Domain *map[string]interface{} `json:"domain,omitempty"`
+	}
+
+	OpenstackScope struct {
+		Project *OpenstackProject `json:"project,omitempty"`
+	}
+
 	OpenstackAuth struct {
 		Identity OpenstackIdentity `json:"identity"`
+		Scope    *OpenstackScope   `json:"scope,omitempty"`
 	}
 )
 
@@ -264,6 +276,107 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 	}
 
 	return yamlResult, nil
+}
+
+func (c *OpenstackClient) MagnumListClusters() ([]byte, error) {
+	url := c.MagnumEndpoint + "/clusters"
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (c *OpenstackClient) MagnumCreateCluster(args model.MagnumCreateClusterRequest) ([]byte, error) {
+	url := c.MagnumEndpoint + "/clusters"
+	b, _ := json.Marshal(args)
+
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	bb, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return bb, nil
+}
+
+func (c *OpenstackClient) MagnumListClusterTemplates() ([]byte, error) {
+	url := c.MagnumEndpoint + "/clustertemplates"
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (c *OpenstackClient) MagnumCreateClusterTemplate(args model.MagnumCreateClusterTemplateRequest) ([]byte, error) {
+	url := c.MagnumEndpoint + "/clustertemplates"
+	b, _ := json.Marshal(args)
+
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+	log.Println(c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	bb, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return bb, nil
 }
 
 func UpdateUnstructuredObject(unstructuredObj *unstructured.Unstructured, opt option.ManifestOption) *unstructured.Unstructured {

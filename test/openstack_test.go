@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"testing"
@@ -10,7 +11,7 @@ import (
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 )
 
-// export $(< test.env)
+// export $(< ./test/data/test.env)
 
 // go test ./test -v -run ^TestClientCredentialAuthentication$
 func TestClientCredentialAuthentication(t *testing.T) {
@@ -37,14 +38,11 @@ func TestClientCredentialAuthentication(t *testing.T) {
 	}
 
 	b, _ := io.ReadAll(res.Body)
-
 	t.Log(string(b))
 
 	if _, err := cl.Authenticate(credential); err != nil {
 		t.Fatal("#2: ", err)
 	}
-
-	os.Setenv("OS_TOKEN", "")
 }
 
 // go test ./test -v -run ^TestClientPasswordAuthentication$
@@ -110,6 +108,7 @@ func TestQuota(t *testing.T) {
 		AuthToken:       os.Getenv("OS_TOKEN"),
 		ProjectId:       os.Getenv("OS_PROJECT_ID"),
 	}
+
 	t.Run("show quota", func(t *testing.T) {
 		res, err := cl.GetProjectQuotas()
 		if err != nil {
@@ -410,4 +409,289 @@ func TestGetLoadBalancer(t *testing.T) {
 		}
 		t.Log(res)
 	})
+}
+
+// go test ./test -v -run ^TestMagnumClientPasswordAuthentication$
+func TestMagnumClientPasswordAuthentication(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+	}
+
+	res, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := io.ReadAll(res.Body)
+	t.Log(string(b))
+
+	if _, err := cl.Authenticate(credential); err != nil {
+		t.Fatal("#2: ", err)
+	}
+}
+
+// go test ./test -v -run ^TestMagnumListClusters$
+func TestMagnumListClusters(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := cl.MagnumListClusters()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestMagnumCreateCluster$
+func TestMagnumCreateCluster(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	labels := map[string]interface{}{
+		"etcd_lb_disabled":         "true",
+		"csi_attacher_tag":         "v3.1.0",
+		"hyperkube_image":          "docker.io/virtuozzo/hci-binary-hyperkube",
+		"availability_zone":        "nova",
+		"csi_snapshotter_tag":      "v3.0.3",
+		"cloud_provider_tag":       "v1.22.0",
+		"etcd_tag":                 "v3.4.6",
+		"docker_volume_type":       "Standard_vDisk-T0",                    // <-
+		"octavia_api_lb_flavor":    "13eda90d-a202-46d9-a2f4-5b03c1d440d0", // ?
+		"cgroup_driver":            "systemd",
+		"cinder_csi_enabled":       "true",
+		"kube_version":             "v1.23.5", // <- kubernetes version
+		"kube_tag":                 "v1.23.5", // <- kubernetes version
+		"use_podman":               "true",
+		"boot_volume_type":         "Standard_vDisk-T0", // <-
+		"cinder_csi_plugin_tag":    "v1.22.0",
+		"flannel_tag":              "v0.11.0-amd64",
+		"boot_volume_size":         "10", // <-
+		"heat_container_agent_tag": "5.3.11",
+		"octavia_default_flavor":   "13eda90d-a202-46d9-a2f4-5b03c1d440d0", // ?
+		"cloud_provider_enabled":   "true",
+	}
+
+	args := model.MagnumCreateClusterRequest{
+		Name:              "lyrid-test-go",
+		MasterFlavorID:    "a2.medium-2",
+		MasterCount:       1,
+		FlavorID:          "a2.medium-2",
+		NodeCount:         1,
+		Keypair:           "eranya-ssh",
+		DockerVolumeSize:  10,
+		ClusterTemplateID: "8764c702-dd08-41fd-9b55-d1147f0144dd",
+		CreateTimeout:     120,
+		Labels:            labels,
+	}
+
+	x, _ := json.Marshal(args)
+	t.Log(string(x))
+
+	b, err := cl.MagnumCreateCluster(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestMagnumListClusterTemplates$
+func TestMagnumListClusterTemplates(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := cl.MagnumListClusterTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestMagnumCreateClusterTemplate$
+func TestMagnumCreateClusterTemplate(t *testing.T) {
+	os.Setenv("OS_TOKEN", "")
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := cl.MagnumListClusterTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
+
+	args := model.MagnumCreateClusterTemplateRequest{
+		FloatingIPEnabled:   true,
+		DockerVolumeSize:    10,
+		ServerType:          "vm",
+		ExternalNetworkID:   "f30c9e3d-757b-43fb-b4e0-da3ab36708a4",
+		ImageID:             "f4c9aa27-fe3a-4c41-819a-67bdf75baa9f",
+		ClusterDistro:       "fedora-coreos",
+		VolumeDriver:        "cinder",
+		DockerStorageDriver: "overlay2",
+		Name:                "test-lyrid_template",
+		NetworkDriver:       "flannel",
+		FixedNetwork:        "a7e5dec7-44e3-455e-9ef8-e30af85328e8", //private
+		FixedSubnet:         "a28ce377-5812-4f09-91a4-dda327102543",
+		COE:                 "kubernetes",
+		MasterLBEnabled:     false,
+	}
+
+	x, _ := json.Marshal(args)
+	t.Log(string(x))
+
+	bb, err := cl.MagnumCreateClusterTemplate(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(bb))
 }
