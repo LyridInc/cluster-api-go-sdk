@@ -9,6 +9,7 @@ import (
 	"github.com/LyridInc/cluster-api-go-sdk/api"
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
+	"github.com/LyridInc/cluster-api-go-sdk/utils"
 )
 
 // export $(< ./test/data/test.env)
@@ -673,14 +674,14 @@ func TestMagnumCreateClusterTemplate(t *testing.T) {
 		DockerVolumeSize:    10,
 		ServerType:          "vm",
 		ExternalNetworkID:   "f30c9e3d-757b-43fb-b4e0-da3ab36708a4",
-		ImageID:             "f4c9aa27-fe3a-4c41-819a-67bdf75baa9f",
+		ImageID:             "f4c9aa27-fe3a-4c41-819a-67bdf75baa9f", // get from "openstack image list"
 		ClusterDistro:       "fedora-coreos",
 		VolumeDriver:        "cinder",
 		DockerStorageDriver: "overlay2",
-		Name:                "test-lyrid_template",
+		Name:                "test-lyrid-wqq_template",
 		NetworkDriver:       "flannel",
-		FixedNetwork:        "a7e5dec7-44e3-455e-9ef8-e30af85328e8", //private
-		FixedSubnet:         "a28ce377-5812-4f09-91a4-dda327102543",
+		FixedNetwork:        "a7e5dec7-44e3-455e-9ef8-e30af85328e8", //private - get from "openstack network list"
+		FixedSubnet:         "a28ce377-5812-4f09-91a4-dda327102543", // get from "openstack subnet list"
 		COE:                 "kubernetes",
 		MasterLBEnabled:     false,
 	}
@@ -694,4 +695,202 @@ func TestMagnumCreateClusterTemplate(t *testing.T) {
 	}
 
 	t.Log(string(bb))
+}
+
+// go test ./test -v -run ^TestImageList$
+func TestImageList(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := cl.GetImageList(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+
+	filter, _ := utils.GetQueryStringFromURL(response.Next)
+	t.Log(filter)
+
+	response, err = cl.GetImageList(filter) // get result from next page
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(response)
+	t.Log(string(b))
+
+	response, err = cl.GetImageList(map[string]string{"name": "fedora-coreos-x64-k8saas"}) // get image by name filter
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(response)
+	t.Log(string(b))
+
+	resp, err := cl.GetImageByID("f4c9aa27-fe3a-4c41-819a-67bdf75baa9f")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(resp)
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestNetworkList$
+func TestNetworkList(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := cl.GetNetworkList(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+
+	resp, err := cl.GetNetworkByID("a7e5dec7-44e3-455e-9ef8-e30af85328e8")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(resp)
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestSubnetList$
+func TestSubnetList(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := cl.GetSubnetList(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+
+	response, err = cl.GetSubnetList(map[string]string{"network_id": "a7e5dec7-44e3-455e-9ef8-e30af85328e8"}) // get subnet by network id
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(response)
+	t.Log(string(b))
+
+	resp, err := cl.GetSubnetByID("8f2acb4a-13bf-4e34-a0fc-fc22980e918d")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(resp)
+	t.Log(string(b))
 }

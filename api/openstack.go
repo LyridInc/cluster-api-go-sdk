@@ -13,6 +13,7 @@ import (
 
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
+	"github.com/LyridInc/cluster-api-go-sdk/utils"
 	yamlmodel "github.com/LyridInc/cluster-api-go-sdk/yaml"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,6 +28,7 @@ type (
 		NetworkEndpoint      string
 		LoadBalancerEndpoint string
 		AuthEndpoint         string
+		ImageEndpoint        string
 		AuthToken            string
 		ProjectId            string
 	}
@@ -242,6 +244,168 @@ func (c *OpenstackClient) GetLoadBalancer(loadBalancerId string) (*model.LoadBal
 	return &loadBalancer, nil
 }
 
+func (c *OpenstackClient) GetImageList(filter map[string]string) (*model.ImageListResponse, error) {
+	url := c.ImageEndpoint + "/v2/images"
+	if filter != nil {
+		queryString := utils.MapToQueryString(filter)
+		url = fmt.Sprintf("%s?%s", url, queryString)
+	}
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	imageListResponse := model.ImageListResponse{}
+	json.Unmarshal(body, &imageListResponse)
+
+	return &imageListResponse, nil
+}
+
+func (c *OpenstackClient) GetImageByID(id string) (*model.Image, error) {
+	url := c.ImageEndpoint + "/v2/images/" + id
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	imageResponse := model.Image{}
+	json.Unmarshal(body, &imageResponse)
+
+	return &imageResponse, nil
+}
+
+func (c *OpenstackClient) GetNetworkList(filter map[string]string) (*model.NetworkListResponse, error) {
+	url := c.NetworkEndpoint + "/v2.0/networks"
+	if filter != nil {
+		queryString := utils.MapToQueryString(filter)
+		url = fmt.Sprintf("%s?%s", url, queryString)
+	}
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	networkListResponse := model.NetworkListResponse{}
+	json.Unmarshal(body, &networkListResponse)
+
+	return &networkListResponse, nil
+}
+
+func (c *OpenstackClient) GetNetworkByID(id string) (*model.NetworkResponse, error) {
+	url := c.NetworkEndpoint + "/v2.0/networks/" + id
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	networkResponse := model.NetworkResponse{}
+	json.Unmarshal(body, &networkResponse)
+
+	return &networkResponse, nil
+}
+
+func (c *OpenstackClient) GetSubnetList(filter map[string]string) (*model.SubnetListResponse, error) {
+	url := c.NetworkEndpoint + "/v2.0/subnets"
+	if filter != nil {
+		queryString := utils.MapToQueryString(filter)
+		url = fmt.Sprintf("%s?%s", url, queryString)
+	}
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	subnetListResponse := model.SubnetListResponse{}
+	json.Unmarshal(body, &subnetListResponse)
+
+	return &subnetListResponse, nil
+}
+
+func (c *OpenstackClient) GetSubnetByID(id string) (*model.SubnetResponse, error) {
+	url := c.NetworkEndpoint + "/v2.0/subnets/" + id
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	subnetResponse := model.SubnetResponse{}
+	json.Unmarshal(body, &subnetResponse)
+
+	return &subnetResponse, nil
+}
+
 func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.ManifestOption) (string, error) {
 	var (
 		err        error
@@ -277,6 +441,8 @@ func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.Manif
 
 	return yamlResult, nil
 }
+
+// magnum client - start
 
 func (c *OpenstackClient) MagnumListClusters() ([]byte, error) {
 	url := c.MagnumEndpoint + "/clusters"
@@ -378,6 +544,8 @@ func (c *OpenstackClient) MagnumCreateClusterTemplate(args model.MagnumCreateClu
 
 	return bb, nil
 }
+
+// magnum client - end
 
 func UpdateUnstructuredObject(unstructuredObj *unstructured.Unstructured, opt option.ManifestOption) *unstructured.Unstructured {
 	apiVersion := unstructuredObj.GetAPIVersion()
