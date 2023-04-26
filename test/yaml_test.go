@@ -109,3 +109,11 @@ func TestUpdateChartYaml(t *testing.T) {
 
 	defer os.RemoveAll("./data/zipped")
 }
+
+// go test ./test -v -run ^TestAnotherCloudsYaml$
+func TestAnotherCloudsYaml(t *testing.T) {
+	yamlByte, _ := os.ReadFile("./data/elitery-clouds.yaml")
+	cloudsYaml := model.CloudsYaml{}
+	cloudsYaml.Parse(yamlByte)
+	t.Log(cloudsYaml)
+}

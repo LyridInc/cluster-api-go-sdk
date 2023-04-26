@@ -29,6 +29,10 @@ type (
 
 	OpenstackAuth struct {
 		AuthUrl                     string `yaml:"auth_url" json:"auth_url"`
+		NetworkUrl                  string `yaml:"network_url" json:"network_url"`
+		MagnumUrl                   string `yaml:"magnum_url" json:"magnum_url"`
+		ImageUrl                    string `yaml:"image_url" json:"image_url"`
+		ComputeUrl                  string `yaml:"compute_url" json:"compute_url"`
 		ProjectId                   string `yaml:"project_id" json:"project_id"`
 		ProjectName                 string `yaml:"project_name" json:"project_name"`
 		UserDomainName              string `yaml:"user_domain_name" json:"user_domain_name"`

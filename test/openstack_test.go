@@ -897,26 +897,30 @@ func TestSubnetList(t *testing.T) {
 
 // go test ./test -v -run ^TestFlavorList$
 func TestFlavorList(t *testing.T) {
+	yamlByte, _ := os.ReadFile("./data/elitery-clouds.yaml")
+	cloudsYaml := model.CloudsYaml{}
+	cloudsYaml.Parse(yamlByte)
+	auth := cloudsYaml.Clouds.Openstack.Auth
+
 	cl := api.OpenstackClient{
-		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
-		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
-		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
-		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
-		ComputeEndpoint: os.Getenv("VT_COMPUTE_ENDPOINT"),
-		AuthToken:       os.Getenv("OS_TOKEN"),
-		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+		MagnumEndpoint:  auth.MagnumUrl,
+		NetworkEndpoint: auth.NetworkUrl,
+		AuthEndpoint:    auth.AuthUrl,
+		ImageEndpoint:   auth.ImageUrl,
+		ComputeEndpoint: auth.ComputeUrl,
+		ProjectId:       auth.ProjectId,
 	}
 
-	projectName := os.Getenv("VT_PROJECT_NAME")
+	projectName := auth.ProjectName
 	credential := api.OpenstackAuth{
 		Identity: api.OpenstackIdentity{
 			Methods: []string{"password"},
 			Password: api.OpenstackPassword{
 				User: map[string]interface{}{
-					"name":     os.Getenv("VT_USERNAME"),
-					"password": os.Getenv("VT_PASSWORD"),
+					"name":     auth.Username,
+					"password": auth.Password,
 					"domain": map[string]string{
-						"id": os.Getenv("VT_DOMAIN_ID"),
+						"id": auth.UserDomainId,
 					},
 				},
 			},
@@ -925,7 +929,7 @@ func TestFlavorList(t *testing.T) {
 			Project: &api.OpenstackProject{
 				Name: &projectName,
 				Domain: &map[string]interface{}{
-					"id": os.Getenv("VT_DOMAIN_ID"),
+					"id": auth.UserDomainId,
 				},
 			},
 		},
