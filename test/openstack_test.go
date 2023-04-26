@@ -894,3 +894,61 @@ func TestSubnetList(t *testing.T) {
 	b, _ = json.Marshal(resp)
 	t.Log(string(b))
 }
+
+// go test ./test -v -run ^TestFlavorList$
+func TestFlavorList(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
+		ComputeEndpoint: os.Getenv("VT_COMPUTE_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := cl.GetFlavorList(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+
+	resp, err := cl.GetFlavorByID("0dc24c34-3e8c-4d1e-ac51-e4f6745018e0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ = json.Marshal(resp)
+	t.Log(string(b))
+}

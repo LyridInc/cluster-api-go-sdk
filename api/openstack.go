@@ -29,6 +29,7 @@ type (
 		LoadBalancerEndpoint string
 		AuthEndpoint         string
 		ImageEndpoint        string
+		ComputeEndpoint      string
 		AuthToken            string
 		ProjectId            string
 	}
@@ -404,6 +405,60 @@ func (c *OpenstackClient) GetSubnetByID(id string) (*model.SubnetResponse, error
 	json.Unmarshal(body, &subnetResponse)
 
 	return &subnetResponse, nil
+}
+
+func (c *OpenstackClient) GetFlavorList(filter map[string]string) (*model.FlavorListResponse, error) {
+	url := c.ComputeEndpoint + "/flavors/detail"
+	if filter != nil {
+		queryString := utils.MapToQueryString(filter)
+		url = fmt.Sprintf("%s?%s", url, queryString)
+	}
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	flavorListResponse := model.FlavorListResponse{}
+	json.Unmarshal(body, &flavorListResponse)
+
+	return &flavorListResponse, nil
+}
+
+func (c *OpenstackClient) GetFlavorByID(id string) (*model.FlavorResponse, error) {
+	url := c.ComputeEndpoint + "/flavors/" + id
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	flavorResponse := model.FlavorResponse{}
+	json.Unmarshal(body, &flavorResponse)
+
+	return &flavorResponse, nil
 }
 
 func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.ManifestOption) (string, error) {

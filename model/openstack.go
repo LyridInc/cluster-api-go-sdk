@@ -237,4 +237,31 @@ type (
 	SubnetResponse struct {
 		Subnet Subnet `json:"subnet"`
 	}
+
+	Flavor struct {
+		Disabled  bool   `json:"OS-FLV-DISABLED:disabled"`
+		Disk      int    `json:"disk"`
+		Ephemeral int    `json:"OS-FLV-EXT-DATA:ephemeral"`
+		IsPublic  bool   `json:"os-flavor-access:is_public"`
+		ID        string `json:"id"`
+		Links     []struct {
+			Href string `json:"href"`
+			Rel  string `json:"rel"`
+		} `json:"links"`
+		Name        string                 `json:"name"`
+		RAM         int                    `json:"ram"`
+		Swap        int                    `json:"swap"`
+		VCPUs       int                    `json:"vcpus"`
+		RxtxFactor  float64                `json:"rxtx_factor"`
+		Description string                 `json:"description"`
+		ExtraSpecs  map[string]interface{} `json:"extra_specs"`
+	}
+
+	FlavorListResponse struct {
+		Flavors []Flavor `json:"flavors"`
+	}
+
+	FlavorResponse struct {
+		Flavor Flavor `json:"flavor"`
+	}
 )
