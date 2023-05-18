@@ -561,3 +561,9 @@ func (c *ClusterApiClient) PatchServiceAccount(name, namespace string, patch []b
 
 	return sa, err
 }
+
+func (c *ClusterApiClient) PatchConfigMap(name, namespace string, patch []byte) (*v1.ConfigMap, error) {
+	cm, err := c.Clientset.CoreV1().ConfigMaps(namespace).Patch(context.Background(), name, types.StrategicMergePatchType, patch, metav1.PatchOptions{})
+
+	return cm, err
+}

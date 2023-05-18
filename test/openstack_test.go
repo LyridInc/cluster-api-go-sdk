@@ -956,3 +956,100 @@ func TestFlavorList(t *testing.T) {
 	b, _ = json.Marshal(resp)
 	t.Log(string(b))
 }
+
+// go test ./test -v -run ^TestCreateCertificateSigningRequest$
+func TestCreateCertificateSigningRequest(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	csrBytes, privateBytes, err := cl.CreateClusterCertificateSigningRequest("lyra-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(csrBytes), string(privateBytes))
+}
+
+// go test ./test -v -run ^TestMagnumCreateClusterKubeconfig$
+func TestMagnumCreateClusterKubeconfig(t *testing.T) {
+	cl := api.OpenstackClient{
+		MagnumEndpoint:  os.Getenv("VT_MAGNUM_ENDPOINT"),
+		NetworkEndpoint: os.Getenv("VT_NETWORK_ENDPOINT"),
+		AuthEndpoint:    os.Getenv("VT_AUTH_ENDPOINT"),
+		ImageEndpoint:   os.Getenv("VT_IMAGE_ENDPOINT"),
+		AuthToken:       os.Getenv("OS_TOKEN"),
+		ProjectId:       os.Getenv("VT_PROJECT_ID"),
+	}
+
+	projectName := os.Getenv("VT_PROJECT_NAME")
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"password"},
+			Password: api.OpenstackPassword{
+				User: map[string]interface{}{
+					"name":     os.Getenv("VT_USERNAME"),
+					"password": os.Getenv("VT_PASSWORD"),
+					"domain": map[string]string{
+						"id": os.Getenv("VT_DOMAIN_ID"),
+					},
+				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name: &projectName,
+				Domain: &map[string]interface{}{
+					"id": os.Getenv("VT_DOMAIN_ID"),
+				},
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := cl.MagnumGenerateKubeconfig("6d8cae6b-4c99-43a9-9d4f-bc0c60e1ae48")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+}

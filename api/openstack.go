@@ -2,7 +2,13 @@ package api
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
@@ -600,7 +606,117 @@ func (c *OpenstackClient) MagnumCreateClusterTemplate(args model.MagnumCreateClu
 	return bb, nil
 }
 
+func (c *OpenstackClient) MagnumGenerateKubeconfig(clusterID string) ([]byte, error) {
+	// sign CA and CSR
+	csrBytes, csrPrivateBytes, err := c.CreateClusterCertificateSigningRequest(clusterID)
+	if err != nil {
+		return nil, err
+	}
+
+	requestBody := map[string]string{
+		"cluster_uuid": clusterID,
+		"csr":          string(csrBytes),
+	}
+	b, _ := json.Marshal(requestBody)
+	payload := bytes.NewBufferString(string(b))
+
+	url := c.MagnumEndpoint + "/certificates"
+	request, err := http.NewRequest("POST", url, payload)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Accept", "application/json")
+	request.Header.Set("User-Agent", "None")
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	certResponse, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var jsonRes map[string]interface{}
+	jwtBytes := []byte(certResponse)
+	if err := json.Unmarshal(jwtBytes, &jsonRes); err != nil {
+		return nil, err
+	}
+
+	log.Println(jsonRes)
+	encodedCsr := base64.StdEncoding.EncodeToString(csrBytes)
+	encodedPrivateCsr := base64.StdEncoding.EncodeToString(csrPrivateBytes)
+	encodedPem := base64.StdEncoding.EncodeToString([]byte(jsonRes["pem"].(string)))
+
+	config := model.KubeconfigConfig{
+		ApiVersion: "v1",
+		Kind:       "Config",
+		Clusters: []model.KubeconfigCluster{{
+			CertificateAuthorityData: encodedPem,
+			Server:                   "https://103.176.45.244:6443",
+		}},
+		Users: []model.KubeconfigUser{{
+			ClientCertificateData: encodedCsr,
+			ClientKeyData:         encodedPrivateCsr,
+			// Token:                 "jwt_token",
+		}},
+		Contexts: []model.KubeconfigContext{{
+			Cluster: "lyra-dev",
+			User:    "admin",
+		}},
+		CurrentContext: "default",
+	}
+
+	// TODO: put it as YAML
+	yamlData, err := yaml.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println(string(yamlData))
+
+	return certResponse, nil
+}
+
 // magnum client - end
+
+func (c *OpenstackClient) CreateClusterCertificateSigningRequest(clusterIdentification string) ([]byte, []byte, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	keyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	privatePemBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: keyBytes,
+	}
+	privatePemBytes := pem.EncodeToMemory(privatePemBlock)
+
+	template := x509.CertificateRequest{
+		Subject: pkix.Name{
+			CommonName: clusterIdentification,
+		},
+		DNSNames: []string{fmt.Sprintf("%s.lyr.id", clusterIdentification)},
+	}
+
+	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &template, privateKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pemBlock := &pem.Block{
+		Type:  "CERTIFICATE REQUEST",
+		Bytes: csrBytes,
+	}
+	pemBytes := pem.EncodeToMemory(pemBlock)
+
+	return pemBytes, privatePemBytes, nil
+}
 
 func UpdateUnstructuredObject(unstructuredObj *unstructured.Unstructured, opt option.ManifestOption) *unstructured.Unstructured {
 	apiVersion := unstructuredObj.GetAPIVersion()

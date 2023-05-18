@@ -21,3 +21,28 @@ type CreateDockerRegistrySecretArgs struct {
 	Email    string `json:"email"`
 	Server   string `json:"server"`
 }
+
+type KubeconfigCluster struct {
+	CertificateAuthorityData string `yaml:"certificate-authority-data"`
+	Server                   string `yaml:"server"`
+}
+
+type KubeconfigUser struct {
+	ClientCertificateData string `yaml:"client-certificate-data"`
+	ClientKeyData         string `yaml:"client-key-data"`
+	Token                 string `yaml:"token"`
+}
+
+type KubeconfigContext struct {
+	Cluster string `yaml:"cluster"`
+	User    string `yaml:"user"`
+}
+
+type KubeconfigConfig struct {
+	ApiVersion     string              `yaml:"apiVersion"`
+	Kind           string              `yaml:"kind"`
+	Clusters       []KubeconfigCluster `yaml:"clusters"`
+	Users          []KubeconfigUser    `yaml:"users"`
+	Contexts       []KubeconfigContext `yaml:"contexts"`
+	CurrentContext string              `yaml:"current-context"`
+}

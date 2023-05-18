@@ -196,7 +196,7 @@ type (
 	}
 
 	NetworkResponse struct {
-		Network Network `json:"network"`
+		Network *Network `json:"network"`
 	}
 
 	Subnet struct {
@@ -235,7 +235,7 @@ type (
 	}
 
 	SubnetResponse struct {
-		Subnet Subnet `json:"subnet"`
+		Subnet *Subnet `json:"subnet"`
 	}
 
 	Flavor struct {
@@ -262,6 +262,6 @@ type (
 	}
 
 	FlavorResponse struct {
-		Flavor Flavor `json:"flavor"`
+		Flavor *Flavor `json:"flavor"`
 	}
 )
