@@ -11,6 +11,7 @@ import (
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	"github.com/LyridInc/cluster-api-go-sdk/utils"
+	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -348,30 +349,24 @@ func TestPatchServiceAccount(t *testing.T) {
 // go test ./test -v -run ^TestPatchConfigMap$
 func TestPatchConfigMap(t *testing.T) {
 	capi, _ := api.NewClusterApiClient("", "./data/zzz-lyrid-local.kubeconfig")
-	manifestUrl := "https://storage.beta.lyrid.io/client/vega-configs-template/config-autoscaler-updated.yaml"
+	manifestUrl := "https://storage.beta.lyrid.io/client/vega-configs-template/config-domain-updated.yaml"
 	configYaml, _ := model.ReadYamlFromUrl(manifestUrl)
 
-	t.Log(configYaml)
-	jsonStringByte, err := utils.ConvertYAMLToJSON(configYaml)
+	y := map[string]interface{}{}
+	yaml.Unmarshal([]byte(configYaml), &y)
+
+	jsonInterface, err := utils.ConvertYAMLToJSON(y)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	jsonMap := map[string]interface{}{}
-	json.Unmarshal(jsonStringByte, &jsonMap)
+	t.Log(jsonInterface)
 
-	t.Log(jsonMap)
-
-	jsonByte, err := json.Marshal(jsonMap)
-	if err != nil {
-		t.Fatal(err)
-	}
+	jsonByte, _ := json.Marshal(jsonInterface)
 
 	t.Log(string(jsonByte))
-	cm, err := capi.PatchConfigMap("config-autoscaler", "knative-serving", jsonByte)
+	_, err = capi.PatchConfigMap("config-domain", "knative-serving", jsonByte)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	t.Log(cm)
 }

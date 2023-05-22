@@ -1,37 +1,39 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
+	"reflect"
 )
 
-func ConvertYAMLToJSON(yamlData interface{}) ([]byte, error) {
-	switch v := yamlData.(type) {
-	case map[interface{}]interface{}:
+func ConvertYAMLToJSON(yamlData interface{}) (interface{}, error) {
+	switch reflect.TypeOf(yamlData).Kind() {
+	case reflect.Map:
 		jsonMap := make(map[string]interface{})
-		for key, value := range v {
-			strKey, ok := key.(string)
-			if !ok {
-				return nil, fmt.Errorf("unsupported type: %T for map key", key)
+		m, ok := yamlData.(map[string]interface{})
+		if ok {
+			for key, value := range m {
+				jsonValue, err := ConvertYAMLToJSON(value)
+				if err != nil {
+					return nil, err
+				}
+				jsonMap[key] = jsonValue
 			}
-			jsonValue, err := ConvertYAMLToJSON(value)
-			if err != nil {
-				return nil, err
+		} else {
+			for key, value := range yamlData.(map[interface{}]interface{}) {
+				strKey, ok := key.(string)
+				if !ok {
+					return nil, fmt.Errorf("unsupported type: %T for map key", key)
+				}
+				jsonValue, err := ConvertYAMLToJSON(value)
+				if err != nil {
+					return nil, err
+				}
+				jsonMap[strKey] = jsonValue
 			}
-			jsonMap[strKey] = jsonValue
 		}
-		return json.Marshal(jsonMap)
-	case []interface{}:
-		jsonSlice := make([]interface{}, len(v))
-		for i, item := range v {
-			jsonValue, err := ConvertYAMLToJSON(item)
-			if err != nil {
-				return nil, err
-			}
-			jsonSlice[i] = jsonValue
-		}
-		return json.Marshal(jsonSlice)
+
+		return jsonMap, nil
 	default:
-		return json.Marshal(v)
+		return yamlData, nil
 	}
 }
