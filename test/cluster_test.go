@@ -370,3 +370,58 @@ func TestPatchConfigMap(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// go test ./test -v -run ^TestAssignSecretCert$
+func TestAssignSecretCert(t *testing.T) {
+	privatekey, _ := os.ReadFile("./data/9cc8b789e6df434aafbb371e8280ec1a__.cesc.lyr.id_2023-05-23 08_43_25 +0000 UTC_cesc.lyr.id.key")
+	certificate, _ := os.ReadFile("./data/9cc8b789e6df434aafbb371e8280ec1a__.cesc.lyr.id_2023-05-23 08_43_25 +0000 UTC_cesc.lyr.id.crt")
+	capi, _ := api.NewClusterApiClient("", "./data/lyrid-client-demo.kubeconfig")
+	req := &v1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "vega.cesc.lyr.id",
+		},
+		Immutable: nil,
+		Data: map[string][]byte{
+			"tls.key": privatekey,
+			"tls.crt": certificate,
+		},
+		StringData: nil,
+		Type:       "kubernetes.io/tls",
+	}
+
+	res, err := capi.Clientset.CoreV1().Secrets("lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a").Create(context.Background(), req, metav1.CreateOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(res)
+}
+
+// go test ./test -v -run ^TestDeleteCluster$
+func TestDeleteCluster(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	// apiVersion := "x-k8s-io/v1" // cluster.cluster.x-k8s.io
+	// clusterName := "yyy-lyrid-dev"
+
+	discoveryClient := capi.Clientset.Discovery()
+	apiResourceList, err := discoveryClient.ServerPreferredResources()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	for _, apiResource := range apiResourceList {
+		if apiResource.GroupVersion == "cluster.x-k8s.io/v1beta1" {
+			for _, resource := range apiResource.APIResources {
+				if resource.Name == "clusters" {
+					result := capi.Clientset.RESTClient().Delete().
+						AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/default/clusters/yyy-lyrid-dev").
+						VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
+						Do(context.TODO())
+					b, _ := result.Raw()
+					t.Log(string(b))
+				}
+			}
+		}
+	}
+}

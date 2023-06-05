@@ -567,3 +567,10 @@ func (c *ClusterApiClient) PatchConfigMap(name, namespace string, patch []byte) 
 
 	return cm, err
 }
+
+func (c *ClusterApiClient) DeleteCluster(clusterName, namespace string) ([]byte, error) {
+	return c.Clientset.RESTClient().Delete().
+		AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/"+namespace+"/clusters/"+clusterName).
+		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
+		DoRaw(context.TODO())
+}
