@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -1052,4 +1053,84 @@ func TestMagnumCreateClusterKubeconfig(t *testing.T) {
 
 	b, _ := json.Marshal(response)
 	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestKeypairList$
+func TestKeypairList(t *testing.T) {
+	cl := api.OpenstackClient{
+		NetworkEndpoint:      os.Getenv("OS_NETWORK_ENDPOINT"),
+		LoadBalancerEndpoint: os.Getenv("OS_LOADBALANCER_ENDPOINT"),
+		AuthEndpoint:         os.Getenv("OS_AUTH_ENDPOINT"),
+		ComputeEndpoint:      os.Getenv("OS_COMPUTE_ENDPOINT"),
+		AuthToken:            os.Getenv("OS_TOKEN"),
+		ProjectId:            os.Getenv("OS_PROJECT_ID"),
+	}
+
+	os.Setenv("OS_TOKEN", "")
+
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"application_credential"},
+			ApplicationCredential: api.OpenstackCredential{
+				ApplicationCredentialName:   os.Getenv("OS_APPLICATION_CREDENTIAL_NAME"),
+				ApplicationCredentialId:     os.Getenv("OS_APPLICATION_CREDENTIAL_ID"),
+				ApplicationCredentialSecret: os.Getenv("OS_APPLICATION_CREDENTIAL_SECRET"),
+			},
+		},
+	}
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := cl.GetKeypairList(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestCreateKeypairSSH$
+func TestCreateKeypairSSH(t *testing.T) {
+	cl := api.OpenstackClient{
+		NetworkEndpoint:      os.Getenv("OS_NETWORK_ENDPOINT"),
+		LoadBalancerEndpoint: os.Getenv("OS_LOADBALANCER_ENDPOINT"),
+		AuthEndpoint:         os.Getenv("OS_AUTH_ENDPOINT"),
+		ComputeEndpoint:      os.Getenv("OS_COMPUTE_ENDPOINT"),
+		AuthToken:            os.Getenv("OS_TOKEN"),
+		ProjectId:            os.Getenv("OS_PROJECT_ID"),
+	}
+
+	os.Setenv("OS_TOKEN", "")
+
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"application_credential"},
+			ApplicationCredential: api.OpenstackCredential{
+				ApplicationCredentialName:   os.Getenv("OS_APPLICATION_CREDENTIAL_NAME"),
+				ApplicationCredentialId:     os.Getenv("OS_APPLICATION_CREDENTIAL_ID"),
+				ApplicationCredentialSecret: os.Getenv("OS_APPLICATION_CREDENTIAL_SECRET"),
+			},
+		},
+	}
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sshKeyName := "sdk-test-ssh"
+
+	response, err := cl.CreateKeypair(sshKeyName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+
+	if err := os.WriteFile(fmt.Sprintf("./data/%s.pem", sshKeyName), []byte(response.Keypair.PrivateKey), 0644); err != nil {
+		t.Fatal("Write private key file error:", err)
+	}
 }

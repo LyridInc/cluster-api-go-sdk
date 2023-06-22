@@ -467,6 +467,65 @@ func (c *OpenstackClient) GetFlavorByID(id string) (*model.FlavorResponse, error
 	return &flavorResponse, nil
 }
 
+func (c *OpenstackClient) GetKeypairList(filter map[string]string) (*model.KeypairListResponse, error) {
+	url := c.ComputeEndpoint + "/os-keypairs"
+	if filter != nil {
+		queryString := utils.MapToQueryString(filter)
+		url = fmt.Sprintf("%s?%s", url, queryString)
+	}
+
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	keypairListResponse := model.KeypairListResponse{}
+	json.Unmarshal(body, &keypairListResponse)
+
+	return &keypairListResponse, nil
+}
+
+func (c *OpenstackClient) CreateKeypair(keypairName string) (*model.KeypairResponse, error) {
+	keypairRequest := map[string]interface{}{}
+	keypairRequest["name"] = keypairName
+	requestBody, _ := json.Marshal(map[string]interface{}{
+		"keypair": keypairRequest,
+	})
+
+	url := c.ComputeEndpoint + "/os-keypairs"
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	keypairResponse := model.KeypairResponse{}
+	json.Unmarshal(body, &keypairResponse)
+
+	return &keypairResponse, nil
+}
+
 func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.ManifestOption) (string, error) {
 	var (
 		err        error

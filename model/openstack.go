@@ -264,4 +264,26 @@ type (
 	FlavorResponse struct {
 		Flavor *Flavor `json:"flavor"`
 	}
+
+	Keypair struct {
+		Name        string `json:"name"`
+		Fingerprint string `json:"fingerprint"`
+		PublicKey   string `json:"public_key"`
+		UserID      string `json:"user_id"`
+		PrivateKey  string `json:"private_key"`
+		Type        string `json:"type"`
+	}
+
+	KeypairItem struct {
+		Keypair Keypair `json:"keypair"`
+	}
+
+	KeypairListResponse struct {
+		Keypairs      []KeypairItem `json:"keypairs"`
+		KeypairsLinks []interface{} `json:"keypairs_links"`
+	}
+
+	KeypairResponse struct {
+		Keypair *Keypair `json:"keypair"`
+	}
 )

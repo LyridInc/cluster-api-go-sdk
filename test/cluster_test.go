@@ -181,13 +181,6 @@ func TestCreateSecret(t *testing.T) {
 		t.Fatal("Error set kubeconfig:", error.Error(err))
 	}
 
-	// 	NAMESPACE     NAME           TYPE     DATA   AGE
-	//  kube-system   cloud-config   Opaque   1      19s
-
-	// {"cloud-2.conf": "base64string"}
-	// kubectl get secret -n kube-system --kubeconfig=/mnt/c/Users/Lyrid/Documents/Projects/cluster-api-sdk/test/data/capi-local-3.kubeconfig cloud-config -o jsonpath="{.data.cloud\.conf}" | base64 --decode
-	// kubectl get pods -A --kubeconfig=/mnt/c/Users/Lyrid/Documents/Projects/cluster-api-sdk/test/data/capi-local-2.kubeconfig
-	// kubectl --kubeconfig=./${CLUSTER_NAME}.kubeconfig create secret -n kube-system generic cloud-config --from-file=/tmp/cloud.conf
 	secret := v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: v1.SchemeGroupVersion.String(),
@@ -401,8 +394,6 @@ func TestAssignSecretCert(t *testing.T) {
 // go test ./test -v -run ^TestDeleteCluster$
 func TestDeleteCluster(t *testing.T) {
 	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
-	// apiVersion := "x-k8s-io/v1" // cluster.cluster.x-k8s.io
-	// clusterName := "yyy-lyrid-dev"
 
 	discoveryClient := capi.Clientset.Discovery()
 	apiResourceList, err := discoveryClient.ServerPreferredResources()
