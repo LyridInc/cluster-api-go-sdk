@@ -1134,3 +1134,42 @@ func TestCreateKeypairSSH(t *testing.T) {
 		t.Fatal("Write private key file error:", err)
 	}
 }
+
+// go test ./test -v -run ^TestDeleteKeypairSSH$
+func TestDeleteKeypairSSH(t *testing.T) {
+	cl := api.OpenstackClient{
+		NetworkEndpoint:      os.Getenv("OS_NETWORK_ENDPOINT"),
+		LoadBalancerEndpoint: os.Getenv("OS_LOADBALANCER_ENDPOINT"),
+		AuthEndpoint:         os.Getenv("OS_AUTH_ENDPOINT"),
+		ComputeEndpoint:      os.Getenv("OS_COMPUTE_ENDPOINT"),
+		AuthToken:            os.Getenv("OS_TOKEN"),
+		ProjectId:            os.Getenv("OS_PROJECT_ID"),
+	}
+
+	os.Setenv("OS_TOKEN", "")
+
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"application_credential"},
+			ApplicationCredential: api.OpenstackCredential{
+				ApplicationCredentialName:   os.Getenv("OS_APPLICATION_CREDENTIAL_NAME"),
+				ApplicationCredentialId:     os.Getenv("OS_APPLICATION_CREDENTIAL_ID"),
+				ApplicationCredentialSecret: os.Getenv("OS_APPLICATION_CREDENTIAL_SECRET"),
+			},
+		},
+	}
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sshKeyName := "sdk-test-ssh"
+
+	response, err := cl.DeleteKeypair(sshKeyName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(response)
+	t.Log(string(b))
+}

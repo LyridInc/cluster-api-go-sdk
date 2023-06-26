@@ -526,6 +526,30 @@ func (c *OpenstackClient) CreateKeypair(keypairName string) (*model.KeypairRespo
 	return &keypairResponse, nil
 }
 
+func (c *OpenstackClient) DeleteKeypair(keypairName string) (*model.KeypairResponse, error) {
+	url := c.ComputeEndpoint + "/os-keypairs/" + keypairName
+	request, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Auth-Token", c.AuthToken)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, _ := io.ReadAll(response.Body)
+
+	keypairResponse := model.KeypairResponse{}
+	json.Unmarshal(body, &keypairResponse)
+
+	return &keypairResponse, nil
+}
+
 func (c *OpenstackClient) UpdateYamlManifest(yamlString string, opt option.ManifestOption) (string, error) {
 	var (
 		err        error
