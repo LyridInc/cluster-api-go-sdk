@@ -244,10 +244,11 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 	return string(yaml), nil
 }
 
-func (c *ClusterApiClient) GetWorkloadClusterKubeconfig(clusterName string) (*string, error) {
+func (c *ClusterApiClient) GetWorkloadClusterKubeconfig(clusterName, namespace string) (*string, error) {
 	opt := client.GetKubeconfigOptions{
 		Kubeconfig:          client.Kubeconfig{Path: c.KubeconfigFile},
 		WorkloadClusterName: clusterName,
+		Namespace:           namespace,
 	}
 
 	out, err := c.Client.GetKubeconfig(opt)
