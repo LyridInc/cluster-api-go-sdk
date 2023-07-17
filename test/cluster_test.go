@@ -274,16 +274,34 @@ func TestGetKubeconfigValues(t *testing.T) {
 
 // go test ./test -v -run ^TestGetService$
 func TestGetService(t *testing.T) {
-	capi, _ := api.NewClusterApiClient("", "./data/capi-az-local.kubeconfig")
-	s, err := capi.GetService("ingress-dftw8qey-ingress-nginx-controller", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(s.Spec.LoadBalancerIP)
-	t.Log(s.Spec.ExternalIPs)
-	t.Log(s.Spec.ClusterIP)
-	t.Log(s.Status.LoadBalancer.Ingress)
-	t.Log(s.Annotations["loadbalancer.openstack.org/load-balancer-id"])
+	t.Run("check service", func(t *testing.T) {
+		capi, _ := api.NewClusterApiClient("", "./data/biznet.config")
+		s, err := capi.GetService("lyrid-ee249691-5b2e-44c8-a032-f3dc1998caad", "lyrid-3250c3b9-3f96-417e-82f6-ac0678002f61")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(s)
+
+		s, err = capi.GetService("lyrid-f2d95330-796c-4735-b4dd-5ae021779141", "lyrid-faa37fc4-f5b8-441c-89c9-1f56fd41356f")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(s.Status.Conditions)
+	})
+
+	t.Run("check LB", func(t *testing.T) {
+		capi, _ := api.NewClusterApiClient("", "./data/capi-az-local.kubeconfig")
+		s, err := capi.GetService("ingress-dftw8qey-ingress-nginx-controller", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(s.Spec.LoadBalancerIP)
+		t.Log(s.Spec.ExternalIPs)
+		t.Log(s.Spec.ClusterIP)
+		t.Log(s.Status.LoadBalancer.Ingress)
+		t.Log(s.Annotations["loadbalancer.openstack.org/load-balancer-id"])
+	})
+
 }
 
 // go test ./test -v -run ^TestGetSecret$
@@ -415,4 +433,26 @@ func TestDeleteCluster(t *testing.T) {
 			}
 		}
 	}
+}
+
+// go test ./test -v -run ^TestGetRevision$
+func TestGetRevision(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/biznet.config")
+	b, err := capi.GetKNativeRevision("lyrid-cf8bf2c4-650a-4550-be9b-ca7557a13adb-00001", "lyrid-6a4b7713-b06d-4c31-9d96-ce81e96bd72c")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestGetConfiguration$
+func TestGetConfiguration(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/biznet.config")
+	b, err := capi.GetKNativeConfiguration("lyrid-ee249691-5b2e-44c8-a032-f3dc1998caad", "lyrid-3250c3b9-3f96-417e-82f6-ac0678002f61")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
 }

@@ -14,6 +14,7 @@ type (
 
 	GenerateWorkloadClusterOptions struct {
 		ClusterName              string
+		TargetNamespace          string
 		KubernetesVersion        string
 		WorkerMachineCount       int64
 		ControlPlaneMachineCount int64

@@ -221,7 +221,7 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 	templateOptions := client.GetClusterTemplateOptions{
 		Kubeconfig:               client.Kubeconfig{Path: c.KubeconfigFile},
 		ClusterName:              opt.ClusterName,
-		TargetNamespace:          "",
+		TargetNamespace:          opt.TargetNamespace,
 		KubernetesVersion:        opt.KubernetesVersion,
 		ListVariablesOnly:        false,
 		WorkerMachineCount:       &opt.WorkerMachineCount,
@@ -571,6 +571,20 @@ func (c *ClusterApiClient) PatchConfigMap(name, namespace string, patch []byte) 
 func (c *ClusterApiClient) DeleteCluster(clusterName, namespace string) ([]byte, error) {
 	return c.Clientset.RESTClient().Delete().
 		AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/"+namespace+"/clusters/"+clusterName).
+		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
+		DoRaw(context.TODO())
+}
+
+func (c *ClusterApiClient) GetKNativeRevision(revisionName, namespace string) ([]byte, error) {
+	return c.Clientset.RESTClient().Get().
+		AbsPath("apis/serving.knative.dev/v1/namespaces/"+namespace+"/revisions/"+revisionName).
+		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
+		DoRaw(context.TODO())
+}
+
+func (c *ClusterApiClient) GetKNativeConfiguration(configurationName, namespace string) ([]byte, error) {
+	return c.Clientset.RESTClient().Get().
+		AbsPath("apis/serving.knative.dev/v1/namespaces/"+namespace+"/configurations/"+configurationName).
 		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
 		DoRaw(context.TODO())
 }
