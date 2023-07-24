@@ -114,7 +114,7 @@ func (c *HelmClient) AddRepo(entry repo.Entry) error {
 	return c.Client.AddOrUpdateChartRepo(entry)
 }
 
-func (c *HelmClient) Install(chartName, releaseName, namespace string, wait bool) (*release.Release, error) {
+func (c *HelmClient) Install(chartName, releaseName, version, namespace string, wait bool) (*release.Release, error) {
 	spec := helm.ChartSpec{
 		ReleaseName:     releaseName,
 		ChartName:       chartName,
@@ -122,6 +122,7 @@ func (c *HelmClient) Install(chartName, releaseName, namespace string, wait bool
 		CreateNamespace: true,
 		Wait:            wait,
 		Timeout:         c.Timeout,
+		Version: version,
 	}
 	opt := helm.GenericHelmOptions{}
 	var finalError error
