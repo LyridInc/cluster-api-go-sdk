@@ -70,7 +70,8 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	t.Run("cluster exists", func(t *testing.T) {
 		clusterName := "capi-testing"
-		conf, err := capi.GetWorkloadClusterKubeconfig(clusterName)
+		namespace := "default"
+		conf, err := capi.GetWorkloadClusterKubeconfig(clusterName, namespace)
 		if err != nil {
 			t.Fatalf(error.Error(err))
 		}
@@ -79,7 +80,7 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 		}
 	})
 	t.Run("cluster doesn't exist", func(t *testing.T) {
-		_, err := capi.GetWorkloadClusterKubeconfig("capi-local")
+		_, err := capi.GetWorkloadClusterKubeconfig("capi-local", "default")
 		if err != nil {
 			t.Fatalf(error.Error(err))
 		}
@@ -90,7 +91,8 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 func TestSetClientsetFromConfigBytes(t *testing.T) {
 	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
 	clusterName := "capi-local-2"
-	conf, err := capi.GetWorkloadClusterKubeconfig(clusterName)
+	namespace := "default"
+	conf, err := capi.GetWorkloadClusterKubeconfig(clusterName, namespace)
 	if err != nil {
 		t.Fatalf(error.Error(err))
 	}
@@ -453,6 +455,30 @@ func TestGetConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestGetClusterK8sResource$
+func TestGetClusterK8sResource(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	b, err := capi.GetClusterK8sResource("lyrid-patch-yaml-midn", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestUpdateClusterK8sResource$
+func TestUpdateClusterK8sResource(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	un, err := capi.UpdateClusterK8sResourceAnnotations("lyrid-patch-yaml-midn", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a", "abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(un.Object)
 
 	t.Log(string(b))
 }

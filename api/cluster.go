@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	yamlserializer "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
@@ -588,4 +589,53 @@ func (c *ClusterApiClient) GetKNativeConfiguration(configurationName, namespace 
 		AbsPath("apis/serving.knative.dev/v1/namespaces/"+namespace+"/configurations/"+configurationName).
 		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
 		DoRaw(context.TODO())
+}
+
+func (c *ClusterApiClient) GetClusterK8sResource(clusterName, namespace string) ([]byte, error) {
+	return c.Clientset.RESTClient().Get().
+		AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/"+namespace+"/clusters/"+clusterName).
+		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
+		DoRaw(context.TODO())
+}
+
+// https://stackoverflow.com/questions/65927298/patching-a-pvc-using-go-client
+func (c *ClusterApiClient) UpdateClusterK8sResourceAnnotations(clusterName, namespace string, patchValues interface{}) (*unstructured.Unstructured, error) {
+	patch := []struct {
+		Op    string      `json:"op"`
+		Path  string      `json:"path"`
+		Value interface{} `json:"value"`
+	}{
+		{
+			Op:    "add",
+			Path:  "/metadata/annotations",
+			Value: struct{}{},
+		},
+		{
+			Op:    "add",
+			Path:  "/metadata/annotations/accountId",
+			Value: "this-is-account-id",
+		},
+		{
+			Op:    "add",
+			Path:  "/metadata/annotations/region",
+			Value: "banten-1",
+		},
+		{
+			Op:    "add",
+			Path:  "/metadata/annotations/vendor",
+			Value: "biznet",
+		},
+	}
+
+	b, _ := json.Marshal(patch)
+
+	resource := schema.GroupVersionResource{
+		Group:    "cluster.x-k8s.io",
+		Version:  "v1beta1",
+		Resource: "clusters",
+	}
+
+	return c.DynamicInterface.Resource(resource).
+		Namespace(namespace).
+		Patch(context.TODO(), clusterName, types.JSONPatchType, b, metav1.PatchOptions{})
 }

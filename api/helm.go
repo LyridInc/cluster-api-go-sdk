@@ -9,6 +9,7 @@ import (
 	"time"
 
 	helm "github.com/mittwald/go-helm-client"
+	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
@@ -114,7 +115,16 @@ func (c *HelmClient) AddRepo(entry repo.Entry) error {
 	return c.Client.AddOrUpdateChartRepo(entry)
 }
 
-func (c *HelmClient) Install(chartName, releaseName, version, namespace string, wait bool) (*release.Release, error) {
+func (c *HelmClient) Install(chartName, releaseName, version, namespace string, values map[string]interface{}, wait bool) (*release.Release, error) {
+	var valuesYaml string
+	if values != nil {
+		yamlData, err := yaml.Marshal(values)
+		if err != nil {
+			return nil, err
+		}
+		valuesYaml = string(yamlData)
+	}
+
 	spec := helm.ChartSpec{
 		ReleaseName:     releaseName,
 		ChartName:       chartName,
@@ -122,8 +132,10 @@ func (c *HelmClient) Install(chartName, releaseName, version, namespace string, 
 		CreateNamespace: true,
 		Wait:            wait,
 		Timeout:         c.Timeout,
-		Version: version,
+		Version:         version,
+		ValuesYaml:      valuesYaml,
 	}
+
 	opt := helm.GenericHelmOptions{}
 	var finalError error
 

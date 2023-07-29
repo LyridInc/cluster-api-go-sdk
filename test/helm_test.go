@@ -58,7 +58,8 @@ func TestHelmGetReleaseValues(t *testing.T) {
 // go test ./test -v -run ^TestHelmInstallChart$
 func TestHelmInstallChart(t *testing.T) {
 	namespace := "default"
-	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	version := "v1.16.3"
+	kubeconfig := "./data/lyr-debug.kubeconfig"
 	hc, err := api.NewHelmClient(kubeconfig, namespace)
 	if err != nil {
 		t.Fatal(error.Error(err))
@@ -72,7 +73,7 @@ func TestHelmInstallChart(t *testing.T) {
 	}
 
 	t.Run("install istio-base", func(t *testing.T) {
-		release, err := hc.Install("istio/base", "istio-base", "istio-system", false)
+		release, err := hc.Install("istio/base", "istio-base", version, "istio-system", nil, false)
 		if err != nil {
 			t.Fatal(error.Error(err))
 		}
@@ -80,7 +81,7 @@ func TestHelmInstallChart(t *testing.T) {
 	})
 
 	t.Run("install istiod", func(t *testing.T) {
-		release, err := hc.Install("istio/istiod", "istiod", "istio-system", true)
+		release, err := hc.Install("istio/istiod", "istiod", version, "istio-system", nil, true)
 		if err != nil {
 			t.Fatal(error.Error(err))
 		}
@@ -94,7 +95,13 @@ func TestHelmInstallChart(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		release, err := hc.Install("istio/gateway", "istio-ingressgateway", "istio-system", true)
+		values := map[string]interface{}{
+			"service": map[string]interface{}{
+				"type": "ClusterIP",
+			},
+		}
+
+		release, err := hc.Install("istio/gateway", "istio-ingressgateway", version, "istio-system", values, true)
 		if err != nil {
 			t.Fatal(error.Error(err))
 		}
