@@ -20,6 +20,7 @@ type CreateDockerRegistrySecretArgs struct {
 	Password string `json:"password"`
 	Email    string `json:"email"`
 	Server   string `json:"server"`
+	Annotations map[string]string `json:"annotations"`
 }
 
 type KubeconfigCluster struct {

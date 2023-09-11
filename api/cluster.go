@@ -490,6 +490,7 @@ func (c *ClusterApiClient) CreateDockerRegistrySecret(secretName, namespace stri
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: namespace,
+			Annotations: args.Annotations,
 		},
 		Type: v1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{},
