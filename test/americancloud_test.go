@@ -31,7 +31,22 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	endpoint := os.Getenv("AC_API_ENDPOINT")
 	client := api.NewAmericanCloudClient(projectID, token, endpoint)
 
-	res, err := client.GetClusterKubeconfig("lyrid-dev")
+	res, err := client.GetClusterKubeconfig("lyr-aztest-zysc")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(res))
+}
+
+// go test ./test -v -run ^TestGetCluster$
+func TestGetCluster(t *testing.T) {
+	projectID := os.Getenv("AC_PROJECT_ID")
+	token := os.Getenv("AC_TOKEN")
+	endpoint := os.Getenv("AC_API_ENDPOINT")
+	client := api.NewAmericanCloudClient(projectID, token, endpoint)
+
+	res, err := client.GetCluster("pm-hyperledger")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,12 +62,12 @@ func TestCreateCluster(t *testing.T) {
 	client := api.NewAmericanCloudClient(projectID, token, endpoint)
 
 	res, err := client.CreateCluster(api.AmericanCloudCreateClusterArgs{
-		Name:             "lyrid-dev",
+		Name:             "lyrid-test",
 		Project:          "handoyo-sutanto-5551290",
 		Zone:             "us-west-0",
 		Version:          "1.25.0",
 		NodeSize:         1,
-		Package:          "Basic ACKS",
+		Package:          "Scale ACKS",
 		BillingPeriod:    "hourly",
 		ControlNodes:     1,
 		HighAvailability: false,

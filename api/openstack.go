@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"reflect"
 	"strings"
@@ -70,6 +71,24 @@ type (
 		Scope    *OpenstackScope   `json:"scope,omitempty"`
 	}
 )
+
+func (c *OpenstackClient) doHttpRequest(request *http.Request) ([]byte, error) {
+	logRequest, _ := httputil.DumpRequest(request, true)
+	log.Printf("Request: %q", logRequest)
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	b, err := io.ReadAll(response.Body)
+	log.Printf("Response: %q", string(b))
+	return b, err
+}
 
 func (c *OpenstackClient) Authenticate(auth OpenstackAuth) (*http.Response, error) {
 	token := os.Getenv("OS_TOKEN")
@@ -151,15 +170,9 @@ func (c *OpenstackClient) CheckAuthToken() (map[string]interface{}, error) {
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 	request.Header.Set("X-Subject-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
+	body, _ := c.doHttpRequest(request)
 
 	jsonResponse := map[string]interface{}{}
-	body, _ := io.ReadAll(response.Body)
 	json.Unmarshal(body, &jsonResponse)
 
 	return jsonResponse, nil
@@ -174,14 +187,7 @@ func (c *OpenstackClient) GetProjectQuotas() (*model.QuotasResponse, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	quotas := model.QuotasResponse{}
 	json.Unmarshal(body, &quotas)
@@ -232,14 +238,7 @@ func (c *OpenstackClient) GetLoadBalancer(loadBalancerId string) (*model.LoadBal
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	loadBalancer := model.LoadBalancerResponse{}
 	json.Unmarshal(body, &loadBalancer)
@@ -265,14 +264,7 @@ func (c *OpenstackClient) GetImageList(filter map[string]string) (*model.ImageLi
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	imageListResponse := model.ImageListResponse{}
 	json.Unmarshal(body, &imageListResponse)
@@ -290,14 +282,7 @@ func (c *OpenstackClient) GetImageByID(id string) (*model.Image, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	imageResponse := model.Image{}
 	json.Unmarshal(body, &imageResponse)
@@ -319,14 +304,7 @@ func (c *OpenstackClient) GetNetworkList(filter map[string]string) (*model.Netwo
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	networkListResponse := model.NetworkListResponse{}
 	json.Unmarshal(body, &networkListResponse)
@@ -344,14 +322,7 @@ func (c *OpenstackClient) GetNetworkByID(id string) (*model.NetworkResponse, err
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	networkResponse := model.NetworkResponse{}
 	json.Unmarshal(body, &networkResponse)
@@ -373,14 +344,7 @@ func (c *OpenstackClient) GetSubnetList(filter map[string]string) (*model.Subnet
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	subnetListResponse := model.SubnetListResponse{}
 	json.Unmarshal(body, &subnetListResponse)
@@ -398,14 +362,7 @@ func (c *OpenstackClient) GetSubnetByID(id string) (*model.SubnetResponse, error
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	subnetResponse := model.SubnetResponse{}
 	json.Unmarshal(body, &subnetResponse)
@@ -427,14 +384,7 @@ func (c *OpenstackClient) GetFlavorList(filter map[string]string) (*model.Flavor
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	flavorListResponse := model.FlavorListResponse{}
 	json.Unmarshal(body, &flavorListResponse)
@@ -452,14 +402,7 @@ func (c *OpenstackClient) GetFlavorByID(id string) (*model.FlavorResponse, error
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	flavorResponse := model.FlavorResponse{}
 	json.Unmarshal(body, &flavorResponse)
@@ -481,14 +424,7 @@ func (c *OpenstackClient) GetKeypairList(filter map[string]string) (*model.Keypa
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	keypairListResponse := model.KeypairListResponse{}
 	json.Unmarshal(body, &keypairListResponse)
@@ -511,14 +447,7 @@ func (c *OpenstackClient) CreateKeypair(keypairName string) (*model.KeypairRespo
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	keypairResponse := model.KeypairResponse{}
 	json.Unmarshal(body, &keypairResponse)
@@ -535,14 +464,7 @@ func (c *OpenstackClient) DeleteKeypair(keypairName string) (*model.KeypairRespo
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	body, _ := io.ReadAll(response.Body)
+	body, _ := c.doHttpRequest(request)
 
 	keypairResponse := model.KeypairResponse{}
 	json.Unmarshal(body, &keypairResponse)
@@ -597,19 +519,7 @@ func (c *OpenstackClient) MagnumListClusters() ([]byte, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return c.doHttpRequest(request)
 }
 
 func (c *OpenstackClient) MagnumCreateCluster(args model.MagnumCreateClusterRequest) ([]byte, error) {
@@ -623,19 +533,7 @@ func (c *OpenstackClient) MagnumCreateCluster(args model.MagnumCreateClusterRequ
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	bb, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return bb, nil
+	return c.doHttpRequest(request)
 }
 
 func (c *OpenstackClient) MagnumListClusterTemplates() ([]byte, error) {
@@ -647,19 +545,7 @@ func (c *OpenstackClient) MagnumListClusterTemplates() ([]byte, error) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
+	return c.doHttpRequest(request)
 }
 
 func (c *OpenstackClient) MagnumCreateClusterTemplate(args model.MagnumCreateClusterTemplateRequest) ([]byte, error) {
@@ -672,21 +558,8 @@ func (c *OpenstackClient) MagnumCreateClusterTemplate(args model.MagnumCreateClu
 	}
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Auth-Token", c.AuthToken)
-	log.Println(c.AuthToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	bb, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return bb, nil
+	return c.doHttpRequest(request)
 }
 
 func (c *OpenstackClient) MagnumGenerateKubeconfig(clusterID string) ([]byte, error) {

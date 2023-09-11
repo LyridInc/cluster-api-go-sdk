@@ -467,7 +467,13 @@ func TestGetClusterK8sResource(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Log(string(b))
+	var cluster map[string]interface{}
+	json.Unmarshal(b, &cluster)
+
+	t.Log(cluster["status"])
+
+	var clusterStatus map[string]interface{} = cluster["status"].(map[string]interface{})
+	t.Log(clusterStatus["phase"])
 }
 
 // go test ./test -v -run ^TestUpdateClusterK8sResource$

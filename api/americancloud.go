@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
+	"net/http/httputil"
 )
 
 type IAmericanCloudClient interface {
@@ -46,12 +48,9 @@ func NewAmericanCloudClient(projectID, token, endpoint string) IAmericanCloudCli
 	}
 }
 
-func (cl *AmericanCloudClient) ListClusters() ([]byte, error) {
-	request, err := http.NewRequest("GET", cl.APIEndpoint+"/clusters/"+cl.ProjectID, nil)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+func (cl *AmericanCloudClient) doHttpRequest(request *http.Request) ([]byte, error) {
+	logRequest, _ := httputil.DumpRequest(request, true)
+	log.Printf("Request: %q", logRequest)
 
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -62,7 +61,19 @@ func (cl *AmericanCloudClient) ListClusters() ([]byte, error) {
 
 	defer response.Body.Close()
 
-	return io.ReadAll(response.Body)
+	b, err := io.ReadAll(response.Body)
+	log.Printf("Response: %q", string(b))
+	return b, err
+}
+
+func (cl *AmericanCloudClient) ListClusters() ([]byte, error) {
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/clusters/"+cl.ProjectID, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
 }
 
 func (cl *AmericanCloudClient) CreateCluster(args AmericanCloudCreateClusterArgs) ([]byte, error) {
@@ -77,14 +88,7 @@ func (cl *AmericanCloudClient) CreateCluster(args AmericanCloudCreateClusterArgs
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	return io.ReadAll(response.Body)
+	return cl.doHttpRequest(request)
 }
 
 func (cl *AmericanCloudClient) GetCluster(clusterName string) ([]byte, error) {
@@ -94,16 +98,7 @@ func (cl *AmericanCloudClient) GetCluster(clusterName string) ([]byte, error) {
 	}
 	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer response.Body.Close()
-
-	return io.ReadAll(response.Body)
+	return cl.doHttpRequest(request)
 }
 
 func (cl *AmericanCloudClient) GetClusterKubeconfig(clusterName string) ([]byte, error) {
@@ -113,16 +108,7 @@ func (cl *AmericanCloudClient) GetClusterKubeconfig(clusterName string) ([]byte,
 	}
 	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer response.Body.Close()
-
-	return io.ReadAll(response.Body)
+	return cl.doHttpRequest(request)
 }
 
 func (cl *AmericanCloudClient) DeleteCluster(clusterName string) ([]byte, error) {
@@ -132,14 +118,5 @@ func (cl *AmericanCloudClient) DeleteCluster(clusterName string) ([]byte, error)
 	}
 	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
 
-	client := &http.Client{}
-	response, err := client.Do(request)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer response.Body.Close()
-
-	return io.ReadAll(response.Body)
+	return cl.doHttpRequest(request)
 }
