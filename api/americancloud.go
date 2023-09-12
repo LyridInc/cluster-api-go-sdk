@@ -3,10 +3,9 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"net/http/httputil"
 )
 
 type IAmericanCloudClient interface {
@@ -49,9 +48,6 @@ func NewAmericanCloudClient(projectID, token, endpoint string) IAmericanCloudCli
 }
 
 func (cl *AmericanCloudClient) doHttpRequest(request *http.Request) ([]byte, error) {
-	logRequest, _ := httputil.DumpRequest(request, true)
-	log.Printf("Request: %q", logRequest)
-
 	client := &http.Client{}
 	response, err := client.Do(request)
 
@@ -59,10 +55,13 @@ func (cl *AmericanCloudClient) doHttpRequest(request *http.Request) ([]byte, err
 		return nil, err
 	}
 
+	if response.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("error %d: resource not found for %s", response.StatusCode, request.URL)
+	}
+
 	defer response.Body.Close()
 
 	b, err := io.ReadAll(response.Body)
-	log.Printf("Response: %q", string(b))
 	return b, err
 }
 

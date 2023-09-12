@@ -46,9 +46,9 @@ func TestGetCluster(t *testing.T) {
 	endpoint := os.Getenv("AC_API_ENDPOINT")
 	client := api.NewAmericanCloudClient(projectID, token, endpoint)
 
-	res, err := client.GetCluster("pm-hyperledger")
+	res, err := client.GetCluster("pm-hyperledger-notfound")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("Error:", err)
 	}
 
 	t.Log(string(res))

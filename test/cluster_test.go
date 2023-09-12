@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/LyridInc/cluster-api-go-sdk/api"
 	"github.com/LyridInc/cluster-api-go-sdk/model"
@@ -487,4 +490,30 @@ func TestUpdateClusterK8sResource(t *testing.T) {
 	b, _ := json.Marshal(un.Object)
 
 	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestDialContext$
+func TestDialContext(t *testing.T) {
+	dialer := &net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return dialer.DialContext(ctx, network, fmt.Sprintf("%s:%d", "205.234.21.72", 443))
+			},
+		},
+	}
+
+	req, _ := http.NewRequest("GET", "https://api.lyrid.io/api/vega/list", nil)
+	req.Header.Add("Authorization", "Bearer <token>")
+	req.Header.Add("Content-Type", "application/json")
+	res, err := httpClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(res)
 }
