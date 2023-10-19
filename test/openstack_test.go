@@ -105,10 +105,30 @@ func TestCheckAuthToken(t *testing.T) {
 // go test ./test -v -run ^TestQuota$
 func TestQuota(t *testing.T) {
 	cl := api.OpenstackClient{
-		NetworkEndpoint: os.Getenv("OS_NETWORK_ENDPOINT"),
-		AuthEndpoint:    os.Getenv("OS_AUTH_ENDPOINT"),
-		AuthToken:       os.Getenv("OS_TOKEN"),
-		ProjectId:       os.Getenv("OS_PROJECT_ID"),
+		NetworkEndpoint:      os.Getenv("OS_NETWORK_ENDPOINT"),
+		LoadBalancerEndpoint: os.Getenv("OS_LOADBALANCER_ENDPOINT"),
+		AuthEndpoint:         os.Getenv("OS_AUTH_ENDPOINT"),
+		ComputeEndpoint:      os.Getenv("OS_COMPUTE_ENDPOINT"),
+		// AuthToken:            os.Getenv("OS_TOKEN"),
+		ProjectId: os.Getenv("OS_PROJECT_ID"),
+	}
+
+	os.Setenv("OS_TOKEN", "")
+
+	credential := api.OpenstackAuth{
+		Identity: api.OpenstackIdentity{
+			Methods: []string{"application_credential"},
+			ApplicationCredential: api.OpenstackCredential{
+				ApplicationCredentialName:   os.Getenv("OS_APPLICATION_CREDENTIAL_NAME"),
+				ApplicationCredentialId:     os.Getenv("OS_APPLICATION_CREDENTIAL_ID"),
+				ApplicationCredentialSecret: os.Getenv("OS_APPLICATION_CREDENTIAL_SECRET"),
+			},
+		},
+	}
+
+	_, err := cl.Authenticate(credential)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	t.Run("show quota", func(t *testing.T) {

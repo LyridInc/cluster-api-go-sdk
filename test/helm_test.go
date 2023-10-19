@@ -140,7 +140,7 @@ func TestHelmUpgradeChart(t *testing.T) {
 
 	timeout := time.Second * (5 * 60)
 
-	release, err := hc.CliUpgrade("./data/chart", "vega", namespace, nil, timeout, true)
+	release, err := hc.CliUpgrade("./data/chart", "vega", namespace, nil, timeout, false, true)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
@@ -218,7 +218,7 @@ func TestHelmUpgradeChartValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
-	release, err := hc.CliUpgrade("ingress-nginx/ingress-nginx", "ingress-tp36ousx", namespace, values, timeout, true)
+	release, err := hc.CliUpgrade("ingress-nginx/ingress-nginx", "ingress-tp36ousx", namespace, values, timeout, false, true)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}
@@ -239,4 +239,36 @@ func TestHelmDeleteRelease(t *testing.T) {
 		t.Fatal(error.Error(err))
 	}
 	t.Log(response)
+}
+
+// go test ./test -v -run ^TestChangeHelmDeployment$
+func TestChangeHelmDeployment(t *testing.T) {
+
+	// bigbang-v2.0.0-2023-10-16051712-dc92e31
+	// master-v0.0.1-2023-10-16051307-e146dc3
+	// helm -n lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a upgrade --reuse-values --set vega.image.tag=master-v0.0.1-2023-10-16051307-e146dc3 vega .
+
+	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+	kubeconfig := "./data/certificatetest-yahv.kubeconfig"
+	releaseName := "vega"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	timeout := time.Second * (5 * 60)
+	values := map[string]interface{}{
+		"vega": map[string]interface{}{
+			"image": map[string]interface{}{
+				"tag": "bigbang-v2.0.0-2023-10-16051712-dc92e31",
+			},
+		},
+	}
+	_, err = hc.CliUpgrade("./data/latest", releaseName, namespace, values, timeout, true, true)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	t.Log("success")
+
 }

@@ -59,6 +59,7 @@ func NewHelmClient(kubeconfigFile, namespace string) (*HelmClient, error) {
 
 	settings := cli.New()
 	settings.KubeConfig = kubeconfigFile
+	settings.SetNamespace(namespace)
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {}); err != nil {
 		return nil, err
@@ -203,12 +204,13 @@ func (c *HelmClient) CliInstall(chartName, releaseName, namespace string, settin
 	return installAction.Run(chart, values)
 }
 
-func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, values map[string]interface{}, timeout time.Duration, waitForJobs bool) (*release.Release, error) {
+func (c *HelmClient) CliUpgrade(chartPath, releaseName, namespace string, values map[string]interface{}, timeout time.Duration, reuseValues, waitForJobs bool) (*release.Release, error) {
 	upgradeAction := action.NewUpgrade(c.ActionConfig)
 	upgradeAction.WaitForJobs = waitForJobs
 	upgradeAction.Timeout = timeout
 	upgradeAction.Namespace = namespace
-	upgradeAction.Install = true
+	upgradeAction.Install = !reuseValues
+	upgradeAction.ReuseValues = reuseValues
 
 	chart, err := loader.Load(chartPath)
 	if err != nil {
