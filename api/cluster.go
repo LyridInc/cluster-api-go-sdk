@@ -14,6 +14,7 @@ import (
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	"gopkg.in/yaml.v2"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -488,8 +489,8 @@ func (c *ClusterApiClient) CreateDockerRegistrySecret(secretName, namespace stri
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: namespace,
+			Name:        secretName,
+			Namespace:   namespace,
 			Annotations: args.Annotations,
 		},
 		Type: v1.SecretTypeDockerConfigJson,
@@ -597,6 +598,15 @@ func (c *ClusterApiClient) GetClusterK8sResource(clusterName, namespace string) 
 		AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/"+namespace+"/clusters/"+clusterName).
 		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
 		DoRaw(context.TODO())
+}
+
+func (c *ClusterApiClient) GetDeployment(deploymentName, namespace string) (*appsv1.Deployment, error) {
+	deployment, err := c.Clientset.AppsV1().Deployments(namespace).Get(context.Background(), deploymentName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return deployment, nil
 }
 
 // https://stackoverflow.com/questions/65927298/patching-a-pvc-using-go-client

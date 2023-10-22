@@ -280,12 +280,13 @@ func TestGetKubeconfigValues(t *testing.T) {
 // go test ./test -v -run ^TestGetService$
 func TestGetService(t *testing.T) {
 	t.Run("check service", func(t *testing.T) {
-		capi, _ := api.NewClusterApiClient("", "./data/biznet.config")
-		s, err := capi.GetService("lyrid-ee249691-5b2e-44c8-a032-f3dc1998caad", "lyrid-3250c3b9-3f96-417e-82f6-ac0678002f61")
+		capi, _ := api.NewClusterApiClient("", "./data/certificatetest-yahv.kubeconfig")
+		s, err := capi.GetService("vega", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
 		if err != nil {
 			t.Fatal(err)
 		}
-		t.Log(s)
+		b, _ := json.Marshal(s)
+		t.Log(string(b))
 
 		s, err = capi.GetService("lyrid-f2d95330-796c-4735-b4dd-5ae021779141", "lyrid-faa37fc4-f5b8-441c-89c9-1f56fd41356f")
 		if err != nil {
@@ -516,4 +517,15 @@ func TestDialContext(t *testing.T) {
 	}
 
 	t.Log(res)
+}
+
+// go test ./test -v -run ^TestGetDeployment$
+func TestGetDeployment(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/certificatetest-yahv.kubeconfig")
+	deployment, err := capi.GetDeployment("vega", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(deployment.Spec.Template.Spec.Containers[0].Image)
 }
