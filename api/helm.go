@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -114,6 +116,29 @@ func NewHelmClientFromConfigBytes(configBytes []byte, namespace string) (*HelmCl
 
 func (c *HelmClient) AddRepo(entry repo.Entry) error {
 	return c.Client.AddOrUpdateChartRepo(entry)
+}
+
+func (c *HelmClient) Pull(chartRef, registryUrl, username, password string) error {
+	client, err := registry.NewClient()
+	if err != nil {
+		return err
+	}
+	if err := client.Login(registryUrl, registry.LoginOptBasicAuth(username, password)); err != nil {
+		return err
+	}
+
+	result, err := client.Pull(registryUrl+"/"+chartRef, registry.PullOptWithChart(true))
+	if err != nil {
+		return err
+	}
+
+	log.Println(result)
+	log.Println(string(result.Chart.Data))
+
+	// var buf bytes.Buffer
+	// gzWriter := gzip.NewWriter(buf)
+
+	return nil
 }
 
 func (c *HelmClient) Install(chartName, releaseName, version, namespace string, values map[string]interface{}, wait bool) (*release.Release, error) {

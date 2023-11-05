@@ -244,11 +244,6 @@ func TestHelmDeleteRelease(t *testing.T) {
 
 // go test ./test -v -run ^TestChangeHelmDeployment$
 func TestChangeHelmDeployment(t *testing.T) {
-
-	// bigbang-v2.0.0-2023-10-16051712-dc92e31
-	// master-v0.0.1-2023-10-16051307-e146dc3
-	// helm -n lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a upgrade --reuse-values --set vega.image.tag=master-v0.0.1-2023-10-16051307-e146dc3 vega .
-
 	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
 	kubeconfig := "./data/certificatetest-yahv.kubeconfig"
 	releaseName := "vega"
@@ -267,6 +262,25 @@ func TestChangeHelmDeployment(t *testing.T) {
 	}
 	_, err = hc.CliUpgrade("./data/latest", releaseName, namespace, values, timeout, true, true)
 	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	t.Log("success")
+
+}
+
+// go test ./test -v -run ^TestHelmPullChart$
+func TestHelmPullChart(t *testing.T) {
+	os.Setenv("HELM_EXPERIMENTAL_OCI", "1")
+
+	namespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+	kubeconfig := "./data/certificatetest-yahv.kubeconfig"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	if err := hc.Pull("clusterapi/vega:0.1.4", "harbor.uswest3.lyr.id", "aarliansyah", "SvJ3PgL5GmscF94"); err != nil {
 		t.Fatal(error.Error(err))
 	}
 
