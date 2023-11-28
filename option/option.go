@@ -20,6 +20,7 @@ type (
 		ControlPlaneMachineCount int64
 		InfrastructureProvider   string
 		Flavor                   string
+		URL                      string
 	}
 
 	ClusterKindSpecOption struct {

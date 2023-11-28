@@ -228,11 +228,21 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 		ListVariablesOnly:        false,
 		WorkerMachineCount:       &opt.WorkerMachineCount,
 		ControlPlaneMachineCount: &opt.ControlPlaneMachineCount,
-		ProviderRepositorySource: &client.ProviderRepositorySourceOptions{
+	}
+
+	if opt.Flavor != "" {
+		templateOptions.ProviderRepositorySource = &client.ProviderRepositorySourceOptions{
 			InfrastructureProvider: opt.InfrastructureProvider,
 			Flavor:                 opt.Flavor,
-		},
+		}
 	}
+
+	if opt.URL != "" {
+		templateOptions.URLSource = &client.URLSourceOptions{
+			URL: opt.URL,
+		}
+	}
+
 	template, err := c.Client.GetClusterTemplate(templateOptions)
 	if err != nil {
 		return "", err

@@ -40,7 +40,7 @@ func TestGenerateClusterTemplate(t *testing.T) {
 	cloudsYaml.SetEnvironment(opt)
 
 	infrastructure := "openstack"
-	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
 
 	clusterName := "capi-elitery"
 	ready, err := capi.InfrastructureReadiness(infrastructure)
@@ -56,7 +56,8 @@ func TestGenerateClusterTemplate(t *testing.T) {
 		WorkerMachineCount:       1,
 		ControlPlaneMachineCount: 1,
 		InfrastructureProvider:   infrastructure,
-		Flavor:                   "external-cloud-provider",
+		Flavor:                   "",
+		URL:                      "./data/template-external-cloud-provider.yaml",
 	}
 	yaml, err := capi.GenerateWorkloadClusterYaml(clusterOpt)
 	if err != nil {
