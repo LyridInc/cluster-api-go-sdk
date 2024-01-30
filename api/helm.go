@@ -204,12 +204,16 @@ func (c *HelmClient) CliAddRepo(entry repo.Entry) error {
 	return nil
 }
 
-func (c *HelmClient) CliInstall(chartName, releaseName, namespace string, settingValues []string) (*release.Release, error) {
+func (c *HelmClient) CliInstall(chartName, releaseName, namespace, version string, settingValues []string) (*release.Release, error) {
 	installAction := action.NewInstall(c.ActionConfig)
 	installAction.Namespace = namespace
 	chartPath, err := installAction.LocateChart(chartName, c.EnvSettings)
 	if err != nil {
 		return nil, err
+	}
+
+	if version != "" {
+		installAction.Version = version
 	}
 
 	values := make(map[string]interface{})
