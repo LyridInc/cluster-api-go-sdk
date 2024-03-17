@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"testing"
 	"time"
 
@@ -21,6 +22,28 @@ import (
 )
 
 // export $(< test.env)
+
+// go test ./test -v -run ^TestOCI$
+func TestOCI(t *testing.T) {
+
+	capi, _ := api.NewClusterApiClient("", "./data/oci/capi-oci-flannel-c.kubeconfig")
+	namespace := "test-ns"
+
+	out, err := exec.Command("bash", "-c", "oci --version").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := string(out[:])
+	t.Log(output)
+
+	t.Run("create namespace", func(t *testing.T) {
+		ns, err := capi.CreateNamespace(namespace)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Log(ns)
+	})
+}
 
 // go test ./test -v -run ^TestGenerateClusterTemplate$
 func TestGenerateClusterTemplate(t *testing.T) {
