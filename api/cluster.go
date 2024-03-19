@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -235,6 +236,50 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 			InfrastructureProvider: opt.InfrastructureProvider,
 			Flavor:                 opt.Flavor,
 		}
+	}
+
+	if opt.URL != "" {
+		templateOptions.URLSource = &client.URLSourceOptions{
+			URL: opt.URL,
+		}
+	}
+
+	template, err := c.Client.GetClusterTemplate(templateOptions)
+	if err != nil {
+		return "", err
+	}
+
+	yaml, err := template.Yaml()
+	if err != nil {
+		return "", err
+	}
+
+	return string(yaml), nil
+}
+
+func (c *ClusterApiClient) GenerateOciWorkloadClusterYaml(opt option.GenerateOciWorkloadClusterOption) (string, error) {
+	os.Setenv("OCI_COMPARTMENT_ID", opt.CompartmentID)
+	os.Setenv("OCI_MANAGED_NODE_IMAGE_ID", opt.ImageID)
+	os.Setenv("OCI_MANAGED_NODE_SHAPE", opt.Shape)
+	os.Setenv("OCI_MANAGED_NODE_MACHINE_TYPE_OCPUS", fmt.Sprintf("%d", opt.MachineTypeOCPU))
+	os.Setenv("OCI_SSH_KEY", opt.SSHKey)
+	os.Setenv("OCI_REGION", opt.Region)
+	os.Setenv("OCI_WORKLOAD_REGION", opt.WorkloadRegion)
+	os.Setenv("KUBERNETES_VERSION", opt.KubernetesVersion)
+	os.Setenv("NAMESPACE", opt.Namespace)
+	os.Setenv("NODE_MACHINE_COUNT", fmt.Sprintf("%d", opt.MachineCount))
+
+	var controlMachineCount int64 = 1
+	templateOptions := client.GetClusterTemplateOptions{
+		Kubeconfig: client.Kubeconfig{
+			Path: c.KubeconfigFile,
+		},
+		ClusterName:              opt.ClusterName,
+		TargetNamespace:          opt.Namespace,
+		KubernetesVersion:        opt.KubernetesVersion,
+		ListVariablesOnly:        false,
+		WorkerMachineCount:       &opt.MachineCount,
+		ControlPlaneMachineCount: &controlMachineCount,
 	}
 
 	if opt.URL != "" {

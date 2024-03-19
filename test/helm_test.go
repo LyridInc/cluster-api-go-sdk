@@ -132,7 +132,7 @@ func TestHelmInstallChartWithSet(t *testing.T) {
 		t.Fatal(error.Error(err))
 	}
 
-	release, err := hc.CliInstall("bitnami/redis", "redis", namespace, []string{
+	release, err := hc.CliInstall("bitnami/redis", "redis", namespace, "v18.8.0", []string{
 		"architecture=standalone",
 		"auth.enabled=false",
 		"master.persistence.enabled=false",

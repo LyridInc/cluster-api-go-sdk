@@ -23,6 +23,21 @@ type (
 		URL                      string
 	}
 
+	GenerateOciWorkloadClusterOption struct {
+		CompartmentID     string
+		ClusterName       string
+		ImageID           string
+		Shape             string
+		MachineTypeOCPU   int
+		SSHKey            string
+		WorkloadRegion    string
+		Namespace         string
+		KubernetesVersion string
+		MachineCount      int64
+		Region            string
+		URL               string
+	}
+
 	ClusterKindSpecOption struct {
 		CidrBlocks []string
 	}
@@ -93,4 +108,9 @@ var OPENSTACK_CINDER_DRIVER_MANIFEST_URLS = map[string]interface{}{
 
 var OPENSTACK_CINDER_STORAGE_URLS = map[string]string{
 	"block": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/examples/cinder-csi-plugin/block/block.yaml",
+}
+
+var OCI_CLUSTER_TEMPLATE_URL map[string]string = map[string]string{
+	"managed_flannel":    "https://github.com/oracle/cluster-api-provider-oci/releases/download/v0.11.5/cluster-template-managed-flannel.yaml",
+	"alternative_region": "https://github.com/oracle/cluster-api-provider-oci/releases/download/v0.11.5/cluster-template-alternative-region.yaml",
 }
