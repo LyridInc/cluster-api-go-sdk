@@ -303,6 +303,47 @@ func (c *ClusterApiClient) GenerateOciWorkloadClusterYaml(opt option.GenerateOci
 	return string(yaml), nil
 }
 
+func (c *ClusterApiClient) GenerateCloudStackWorkloadClusterYaml(opt option.GenerateCloudStackWorkloadClusterOption) (string, error) {
+	os.Setenv("CLOUDSTACK_ZONE_NAME", opt.ZoneName)
+	os.Setenv("CLOUDSTACK_NETWORK_NAME", opt.NetworkName)
+	os.Setenv("CLUSTER_ENDPOINT_IP", opt.ClusterEndpointIP)
+	os.Setenv("CLUSTER_ENDPOINT_PORT", opt.ClusterEndpointPort)
+	os.Setenv("CLOUDSTACK_CONTROL_PLANE_MACHINE_OFFERING", opt.ControlPlaneMachineOffering)
+	os.Setenv("CLOUDSTACK_WORKER_MACHINE_OFFERING", opt.WorkerMachineOffering)
+	os.Setenv("CLOUDSTACK_TEMPLATE_NAME", opt.TemplateName)
+	os.Setenv("CLOUDSTACK_SSH_KEY_NAME", opt.SshKeyName)
+
+	templateOptions := client.GetClusterTemplateOptions{
+		Kubeconfig: client.Kubeconfig{
+			Path: c.KubeconfigFile,
+		},
+		ClusterName:              opt.ClusterName,
+		TargetNamespace:          opt.Namespace,
+		KubernetesVersion:        opt.KubernetesVersion,
+		ListVariablesOnly:        false,
+		WorkerMachineCount:       &opt.WorkerMachineCount,
+		ControlPlaneMachineCount: &opt.ControlPlaneMachineCount,
+	}
+
+	if opt.URL != "" {
+		templateOptions.URLSource = &client.URLSourceOptions{
+			URL: opt.URL,
+		}
+	}
+
+	template, err := c.Client.GetClusterTemplate(templateOptions)
+	if err != nil {
+		return "", err
+	}
+
+	yaml, err := template.Yaml()
+	if err != nil {
+		return "", err
+	}
+
+	return string(yaml), nil
+}
+
 func (c *ClusterApiClient) GetWorkloadClusterKubeconfig(clusterName, namespace string) (*string, error) {
 	opt := client.GetKubeconfigOptions{
 		Kubeconfig:          client.Kubeconfig{Path: c.KubeconfigFile},

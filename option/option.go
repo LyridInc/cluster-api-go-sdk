@@ -38,6 +38,23 @@ type (
 		URL               string
 	}
 
+	GenerateCloudStackWorkloadClusterOption struct {
+		ZoneName                    string
+		NetworkName                 string
+		ClusterEndpointIP           string
+		ClusterEndpointPort         string
+		ControlPlaneMachineOffering string
+		WorkerMachineOffering       string
+		TemplateName                string
+		SshKeyName                  string
+		ClusterName                 string
+		Namespace                   string
+		KubernetesVersion           string
+		WorkerMachineCount          int64
+		ControlPlaneMachineCount    int64
+		URL                         string
+	}
+
 	ClusterKindSpecOption struct {
 		CidrBlocks []string
 	}

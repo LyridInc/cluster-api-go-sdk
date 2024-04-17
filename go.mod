@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/apache/cloudstack-go v2.4.1+incompatible // indirect
 	github.com/aws/aws-sdk-go-v2 v1.22.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.5.0 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.15.1 // indirect
