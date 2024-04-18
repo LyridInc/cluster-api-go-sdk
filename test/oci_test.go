@@ -22,14 +22,14 @@ func TestGenerateOciClusterTemplate(t *testing.T) {
 
 	clusterName := "capi-oci-test"
 	clusterOpt := option.GenerateOciWorkloadClusterOption{
-		CompartmentID:     "ocid1.compartment.oc1..aaaaaaaabgpgr4qf7zzyfoscxn3426wuw4vs5tlw2jsdasjvwt5fdavj3ura",
+		CompartmentID:     "<your compartment id>",
 		ClusterName:       clusterName,
 		ImageID:           "",
 		Shape:             "VM.Standard.E3.Flex",
 		MachineTypeOCPU:   4,
 		SSHKey:            "",
-		Region:            "ap-singapore-1",
-		WorkloadRegion:    "ap-singapore-1",
+		Region:            "eu-frankfurt-1",
+		WorkloadRegion:    "eu-frankfurt-1",
 		Namespace:         "default",
 		KubernetesVersion: "v1.28.2",
 		MachineCount:      1,
@@ -42,5 +42,9 @@ func TestGenerateOciClusterTemplate(t *testing.T) {
 
 	if err := os.WriteFile(fmt.Sprintf("./data/%s.yaml", clusterName), []byte(yaml), 0644); err != nil {
 		t.Fatal("Write yaml error:", err)
+	}
+
+	if err := capi.ApplyYaml(yaml); err != nil {
+		t.Fatal(error.Error(err))
 	}
 }

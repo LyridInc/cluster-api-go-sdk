@@ -70,16 +70,23 @@ func TestGenerateCloudStackClusterTemplate(t *testing.T) {
 	ipAddress := resp.PublicIpAddresses[0].Ipaddress
 	fmt.Println("Cluster Endpoint IP:", ipAddress)
 
+	zone, _, err := cs.Zone.GetZoneByID(zoneId)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("Zone:", zone.Name)
+
 	clusterName := "capc-test"
 	clusterOpt := option.GenerateCloudStackWorkloadClusterOption{
-		ZoneName:                    "zone0",
+		ZoneName:                    zone.Name,
 		NetworkName:                 fmt.Sprintf("%s-network", clusterName),
 		ClusterEndpointIP:           ipAddress, // TODO
 		ClusterEndpointPort:         "6443",
 		ControlPlaneMachineOffering: "DBaaS Premium Control Node 2/4/100",
 		WorkerMachineOffering:       "DBaaS Premium Worker Node 16/32/100",
 		TemplateName:                "KUBE Ubuntu 20.04 CAPI",
-		SshKeyName:                  "",
+		SshKeyName:                  "azhary-keypair",
 		ClusterName:                 clusterName,
 		Namespace:                   "capc",
 		KubernetesVersion:           "v1.27.3",
@@ -120,4 +127,21 @@ func TestInstallCloudStackCloudControllerManager(t *testing.T) {
 	cloudConfigValuesB64 := base64.StdEncoding.EncodeToString([]byte(cloudConfigValues))
 	t.Log(cloudConfigValues)
 	t.Log(cloudConfigValuesB64)
+}
+
+// go test ./test -v -run ^TestCreateCloudStackSSHKeypair$
+func TestCreateCloudStackSSHKeypair(t *testing.T) {
+	apiUrl := os.Getenv("CLOUDSTACK_API_URL")
+	apiKey := os.Getenv("CLOUDSTACK_API_KEY")
+	secret := os.Getenv("CLOUDSTACK_SECRET")
+
+	cs := cloudstack.NewAsyncClient(apiUrl, apiKey, secret, true)
+	params := cloudstack.CreateSSHKeyPairParams{}
+	params.SetName("test-keypair")
+	resp, err := cs.SSH.CreateSSHKeyPair(&params)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(resp.Privatekey)
 }
