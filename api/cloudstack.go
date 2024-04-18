@@ -7,6 +7,7 @@ import (
 type ICloudStackClient interface {
 	ListPublicIpAddresses(zoneID, state string) (*cloudstack.ListPublicIpAddressesResponse, error)
 	CreateSSHKeypair(keypairName string) (*cloudstack.CreateSSHKeyPairResponse, error)
+	GetZoneByID(zoneID string) (*cloudstack.Zone, error)
 }
 
 type CloudStackClient struct {
@@ -32,4 +33,9 @@ func (cl *CloudStackClient) CreateSSHKeypair(keypairName string) (*cloudstack.Cr
 	params := cloudstack.CreateSSHKeyPairParams{}
 	params.SetName(keypairName)
 	return cl.Client.SSH.CreateSSHKeyPair(&params)
+}
+
+func (cl *CloudStackClient) GetZoneByID(zoneID string) (*cloudstack.Zone, error) {
+	zone, _, err := cl.Client.Zone.GetZoneByID(zoneID)
+	return zone, err
 }
