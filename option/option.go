@@ -107,6 +107,8 @@ var Namespaces map[string]string = map[string]string{
 const FLANNEL_MANIFEST_URL = "https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml"
 const WEAVE_MANIFEST_URL = "https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml"
 
+const CLOUDSTACK_CLOUD_CONTROLLER_MANIFEST_URL = "https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
+
 var OPENSTACK_CLOUD_CONTROLLER_MANIFEST_URLS = []string{
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-roles.yaml",
 	"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/controller-manager/cloud-controller-manager-role-bindings.yaml",
