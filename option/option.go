@@ -36,6 +36,7 @@ type (
 		MachineCount      int64
 		Region            string
 		URL               string
+		BootVolumeSize    int64
 	}
 
 	GenerateCloudStackWorkloadClusterOption struct {

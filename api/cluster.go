@@ -261,15 +261,19 @@ func (c *ClusterApiClient) GenerateOciWorkloadClusterYaml(opt option.GenerateOci
 	os.Setenv("OCI_COMPARTMENT_ID", opt.CompartmentID)
 	os.Setenv("OCI_MANAGED_NODE_IMAGE_ID", opt.ImageID)
 	os.Setenv("OCI_MANAGED_NODE_SHAPE", opt.Shape)
-	if opt.MachineTypeOCPU > 0 {
-		os.Setenv("OCI_MANAGED_NODE_MACHINE_TYPE_OCPUS", fmt.Sprintf("%d", opt.MachineTypeOCPU))
-	}
 	os.Setenv("OCI_SSH_KEY", opt.SSHKey)
 	os.Setenv("OCI_REGION", opt.Region)
 	os.Setenv("OCI_WORKLOAD_REGION", opt.WorkloadRegion)
 	os.Setenv("KUBERNETES_VERSION", opt.KubernetesVersion)
 	os.Setenv("NAMESPACE", opt.Namespace)
 	os.Setenv("NODE_MACHINE_COUNT", fmt.Sprintf("%d", opt.MachineCount))
+
+	if opt.MachineTypeOCPU > 0 {
+		os.Setenv("OCI_MANAGED_NODE_MACHINE_TYPE_OCPUS", fmt.Sprintf("%d", opt.MachineTypeOCPU))
+	}
+	if opt.BootVolumeSize != 0 {
+		os.Setenv("OCI_MANAGED_NODE_BOOT_VOLUME_SIZE", fmt.Sprintf("%d", opt.BootVolumeSize))
+	}
 
 	var controlMachineCount int64 = 1
 	templateOptions := client.GetClusterTemplateOptions{
