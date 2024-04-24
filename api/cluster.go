@@ -39,6 +39,7 @@ type (
 		Clientset        *kubernetes.Clientset
 		DynamicInterface dynamic.Interface
 		InitOptions      client.InitOptions
+		Config           *rest.Config
 		ConfigFile       string
 		KubeconfigFile   string
 		LabelSelector    *metav1.LabelSelector
@@ -74,6 +75,7 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 	return &ClusterApiClient{
 		Client:           cl,
 		Clientset:        clientset,
+		Config:           conf,
 		DynamicInterface: dd,
 		ConfigFile:       configFile,
 		KubeconfigFile:   kubeconfigFile,
