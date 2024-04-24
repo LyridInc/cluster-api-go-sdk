@@ -24,12 +24,15 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	yamlserializer "k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client"
 )
 
@@ -753,4 +756,99 @@ func (c *ClusterApiClient) UpdateClusterK8sResourceAnnotations(clusterName, name
 	return c.DynamicInterface.Resource(resource).
 		Namespace(namespace).
 		Patch(context.TODO(), clusterName, types.JSONPatchType, b, metav1.PatchOptions{})
+}
+
+func (c *ClusterApiClient) ExecuteNodeShellCommand(nodeName, command string) error {
+	var (
+		terminationGracePeriodSeconds int64 = 0
+		privilegedSecurityContext     bool  = true
+		podName                             = "node-shell-" + nodeName
+		namespace                           = "kube-system"
+	)
+
+	podSpec := v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      podName,
+			Namespace: namespace,
+		},
+		Spec: v1.PodSpec{
+			RestartPolicy:                 "Never",
+			TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+			HostPID:                       true,
+			HostIPC:                       true,
+			HostNetwork:                   true,
+			Tolerations: []v1.Toleration{
+				{
+					Operator: "Exists",
+				},
+			},
+			Containers: []v1.Container{
+				{
+					Name:  "shell",
+					Image: "docker.io/alpine:3.12",
+					SecurityContext: &v1.SecurityContext{
+						Privileged: &privilegedSecurityContext,
+					},
+					Command: []string{"nsenter"},
+					Args:    []string{"-t", "1", "-m", "-u", "-i", "-n", "sleep", "14000"},
+				},
+			},
+			NodeSelector: map[string]string{
+				"kubernetes.io/hostname": nodeName,
+			},
+		},
+	}
+
+	_, err := c.Clientset.CoreV1().Pods(namespace).Create(context.Background(), &podSpec, metav1.CreateOptions{})
+	if err != nil {
+		return err
+	}
+
+	wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
+		pod, err := c.Clientset.CoreV1().Pods(namespace).Get(context.Background(), podName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+
+		if pod.Status.Phase == "Running" {
+			return true, nil
+		}
+
+		fmt.Printf("Waiting for pod %s to be in Running phase...\n", podName)
+		return false, nil
+	})
+
+	req := c.Clientset.CoreV1().RESTClient().
+		Post().
+		Resource("pods").
+		Name(podName).
+		Namespace(namespace).
+		SubResource("exec").
+		VersionedParams(&v1.PodExecOptions{
+			Container: "shell",
+			Command:   strings.Split(command, " "),
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       false,
+		}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
+	if err != nil {
+		c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
+		return err
+	}
+
+	err = executor.Stream(remotecommand.StreamOptions{
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+		Tty:    false,
+	})
+	if err != nil {
+		c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
+		return err
+	}
+
+	return c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
 }

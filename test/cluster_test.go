@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -19,9 +18,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/tools/remotecommand"
-	"k8s.io/kubectl/pkg/scheme"
 )
 
 // export $(< test.env)
@@ -538,100 +534,11 @@ func TestGetDeployment(t *testing.T) {
 // go test ./test -v -run ^TestNodeShell$
 func TestNodeShell(t *testing.T) {
 	t.Run("execute command in machine node", func(t *testing.T) {
-		var terminationGracePeriodSeconds int64 = 0
-		var privilegedSecurityContext bool = true
 		var nodeName string = "az-vega-md-0-xgzfb"
-		var podName string = "node-shell-test"
-		var namespace string = "kube-system"
-
-		podSpec := v1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      podName,
-				Namespace: namespace,
-			},
-			Spec: v1.PodSpec{
-				RestartPolicy:                 "Never",
-				TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
-				HostPID:                       true,
-				HostIPC:                       true,
-				HostNetwork:                   true,
-				Tolerations: []v1.Toleration{
-					{
-						Operator: "Exists",
-					},
-				},
-				Containers: []v1.Container{
-					{
-						Name:  "shell",
-						Image: "docker.io/alpine:3.12",
-						SecurityContext: &v1.SecurityContext{
-							Privileged: &privilegedSecurityContext,
-						},
-						Command: []string{"nsenter"},
-						Args:    []string{"-t", "1", "-m", "-u", "-i", "-n", "sleep", "14000"},
-					},
-				},
-				NodeSelector: map[string]string{
-					"kubernetes.io/hostname": nodeName,
-				},
-			},
-		}
-
 		capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
-		capi.Clientset.CoreV1().Pods(namespace).Create(context.Background(), &podSpec, metav1.CreateOptions{})
-
-		wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
-			pod, err := capi.Clientset.CoreV1().Pods(namespace).Get(context.Background(), podName, metav1.GetOptions{})
-			if err != nil {
-				fmt.Println(err)
-				return false, err
-			}
-
-			if pod.Status.Phase == "Running" {
-				fmt.Printf("Pod %s is now in Running phase\n", podName)
-				return true, nil
-			}
-
-			fmt.Printf("Waiting for pod %s to be in Running phase...\n", podName)
-			return false, nil
-		})
-
-		command := "/bin/sh -c ./test-longrunning.sh"
-		fmt.Println("Executing command:", command)
-		req := capi.Clientset.CoreV1().RESTClient().
-			Post().
-			Resource("pods").
-			Name(podName).
-			Namespace(namespace).
-			SubResource("exec").
-			VersionedParams(&v1.PodExecOptions{
-				Container: "shell",
-				Command:   strings.Split(command, " "),
-				Stdin:     true,
-				Stdout:    true,
-				Stderr:    true,
-				TTY:       false,
-			}, scheme.ParameterCodec)
-
-		executor, err := remotecommand.NewSPDYExecutor(capi.Config, "POST", req.URL())
+		err := capi.ExecuteNodeShellCommand(nodeName, "apt-get install open-iscsi -y")
 		if err != nil {
-			capi.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
-			t.Fatal(err.Error())
+			t.Fatal(err)
 		}
-
-		err = executor.Stream(remotecommand.StreamOptions{
-			Stdin:  os.Stdin,
-			Stdout: os.Stdout,
-			Stderr: os.Stderr,
-			Tty:    false,
-		})
-		if err != nil {
-			capi.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
-			t.Fatal(err.Error())
-		}
-
-		fmt.Printf("Deleting pod %s...\n", podName)
-
-		capi.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
 	})
 }
