@@ -18,6 +18,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // export $(< test.env)
@@ -387,6 +388,37 @@ func TestPatchConfigMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// go test ./test -v -run ^TestPatchSecret$
+func TestPatchSecret(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	namespace := "cluster-api-provider-oci-system"
+	s, err := capi.GetSecret("capoci-auth-config", namespace)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s.Data["region"] = []byte("ap-singapore-1")
+
+	_, err = capi.UpdateSecret("cluster-api-provider-oci-system", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	capi.RestartDeployment("capoci-controller-manager", namespace)
+
+	wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
+		deployment, _ := capi.GetDeployment("capoci-controller-manager", namespace)
+		// Check if the deployment is running
+		if deployment.Status.AvailableReplicas == *deployment.Spec.Replicas {
+			fmt.Printf("Deployment %s is running\n", deployment.Name)
+			return true, nil
+		} else {
+			fmt.Printf("Deployment %s is not running\n", deployment.Name)
+			return false, nil
+		}
+	})
 }
 
 // go test ./test -v -run ^TestAssignSecretCert$

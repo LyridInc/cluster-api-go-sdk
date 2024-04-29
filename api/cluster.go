@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -679,6 +680,12 @@ func (c *ClusterApiClient) PatchConfigMap(name, namespace string, patch []byte) 
 	return cm, err
 }
 
+func (c *ClusterApiClient) UpdateSecret(namespace string, secret *v1.Secret) (*v1.Secret, error) {
+	sc, err := c.Clientset.CoreV1().Secrets(namespace).Update(context.Background(), secret, metav1.UpdateOptions{})
+
+	return sc, err
+}
+
 func (c *ClusterApiClient) DeleteCluster(clusterName, namespace string) ([]byte, error) {
 	return c.Clientset.RESTClient().Delete().
 		AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/"+namespace+"/clusters/"+clusterName).
@@ -711,6 +718,38 @@ func (c *ClusterApiClient) GetDeployment(deploymentName, namespace string) (*app
 	deployment, err := c.Clientset.AppsV1().Deployments(namespace).Get(context.Background(), deploymentName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
+	}
+
+	return deployment, nil
+}
+
+func (c *ClusterApiClient) RestartDeployment(deploymentName, namespace string) (*appsv1.Deployment, error) {
+	deployment, err := c.Clientset.AppsV1().Deployments(namespace).Get(context.Background(), deploymentName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var restartTimestampFound bool
+	container := &deployment.Spec.Template.Spec.Containers[0]
+	for i, env := range container.Env {
+		if env.Name == "RESTART_TIMESTAMP" {
+			container.Env[i].Value = strconv.FormatInt(time.Now().Unix(), 10)
+			restartTimestampFound = true
+			break
+		}
+	}
+
+	if !restartTimestampFound {
+		container.Env = append(container.Env,
+			v1.EnvVar{
+				Name:  "RESTART_TIMESTAMP",
+				Value: strconv.FormatInt(time.Now().Unix(), 10),
+			})
+	}
+
+	_, err = c.Clientset.AppsV1().Deployments(namespace).Update(context.TODO(), deployment, metav1.UpdateOptions{})
+	if err != nil {
+		panic(err.Error())
 	}
 
 	return deployment, nil
