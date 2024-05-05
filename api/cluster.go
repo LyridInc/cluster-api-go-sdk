@@ -164,6 +164,7 @@ func (c *ClusterApiClient) SetKubernetesClientsetFromConfigBytes(configBytes []b
 	c.Clientset = clientset
 	c.DynamicInterface = dd
 	c.ConfigBytes = configBytes
+	c.Config = conf
 	return nil
 }
 
