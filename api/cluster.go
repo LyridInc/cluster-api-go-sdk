@@ -168,6 +168,35 @@ func (c *ClusterApiClient) SetKubernetesClientsetFromConfigBytes(configBytes []b
 	return nil
 }
 
+func (c *ClusterApiClient) SetRateLimitFromConfigBytes(burst int, qps float32, configBytes []byte) error {
+	conf, err := clientcmd.RESTConfigFromKubeConfig(configBytes)
+	if err != nil {
+		return err
+	}
+
+	conf.Burst = burst
+	conf.QPS = qps
+
+	clientset, err := kubernetes.NewForConfig(conf)
+	if err != nil {
+		log.Fatal("Clientset config error:", err)
+		return err
+	}
+
+	dd, err := dynamic.NewForConfig(conf)
+	if err != nil {
+		log.Fatal("Dynamic interface config error:", err)
+		return err
+	}
+
+	c.DynamicInterface = dd
+	c.Clientset = clientset
+	c.ConfigBytes = configBytes
+	c.Config = conf
+
+	return nil
+}
+
 func (c *ClusterApiClient) SetKubernetesClientset(kubeconfigFile string) error {
 	conf, err := clientcmd.BuildConfigFromFlags("", kubeconfigFile)
 	if err != nil {
