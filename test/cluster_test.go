@@ -94,7 +94,7 @@ func TestGetWorkloadClusterKubeconfig(t *testing.T) {
 
 // go test ./test -v -run ^TestSetClientsetFromConfigBytes$
 func TestSetClientsetFromConfigBytes(t *testing.T) {
-	capi, _ := api.NewClusterApiClient("", "./data/local.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/cloudstack/capc-cluster.kubeconfig")
 	clusterName := "capi-local-2"
 	namespace := "default"
 	conf, err := capi.GetWorkloadClusterKubeconfig(clusterName, namespace)
@@ -106,18 +106,17 @@ func TestSetClientsetFromConfigBytes(t *testing.T) {
 	}
 
 	capi.SetKubernetesClientsetFromConfigBytes([]byte(*conf))
-
 	secret := v1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: v1.SchemeGroupVersion.String(),
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-secret",
+			Name:      "cloudstack-secret",
 			Namespace: "kube-system",
 		},
 		Data: map[string][]byte{
-			"key": []byte("test secret"),
+			"cloud-config": []byte("test"),
 		},
 	}
 
@@ -566,11 +565,47 @@ func TestGetDeployment(t *testing.T) {
 // go test ./test -v -run ^TestNodeShell$
 func TestNodeShell(t *testing.T) {
 	t.Run("execute command in machine node", func(t *testing.T) {
-		var nodeName string = "az-vega-md-0-xgzfb"
-		capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
-		err := capi.ExecuteNodeShellCommand(nodeName, "apt-get install open-iscsi -y")
+		capi, _ := api.NewClusterApiClient("", "./data/oci/test-nodecmd.kubeconfig")
+
+		nodes, err := capi.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		for _, node := range nodes.Items {
+			err := capi.ExecuteNodeShellCommand(node.Name, "yum --setopt=tsflags=noscripts install iscsi-initiator-utils")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	})
+
+	// TODO: remove nvidia taints
+	// taints:
+	//   - key: nvidia.com/gpu
+	//     effect: NoSchedule
+}
+
+// go test ./test -v -run ^TestListNodes$
+func TestListNodes(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	nodes, err := capi.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, node := range nodes.Items {
+		t.Log(node.Name)
+	}
+}
+
+// go test ./test -v -run ^TestGetWorkloadClusterMachines$
+func TestGetWorkloadClusterMachines(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/lyrid-staging.kubeconfig")
+	machines, err := capi.GetWorkloadClusterMachines("lyr-kube-choqkf-hqtk", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(machines)
 }

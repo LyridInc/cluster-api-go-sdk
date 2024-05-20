@@ -16,10 +16,10 @@ type DockerConfigJSON struct {
 }
 
 type CreateDockerRegistrySecretArgs struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Email    string `json:"email"`
-	Server   string `json:"server"`
+	Username    string            `json:"username"`
+	Password    string            `json:"password"`
+	Email       string            `json:"email"`
+	Server      string            `json:"server"`
 	Annotations map[string]string `json:"annotations"`
 }
 
@@ -46,4 +46,15 @@ type KubeconfigConfig struct {
 	Users          []KubeconfigUser    `yaml:"users"`
 	Contexts       []KubeconfigContext `yaml:"contexts"`
 	CurrentContext string              `yaml:"current-context"`
+}
+
+type CRDResource struct {
+	ApiVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Metadata   struct {
+		Labels map[string]string `yaml:"labels"`
+	} `yaml:"metadata"`
+	Status struct {
+		Phase string `yaml:"phase"`
+	} `yaml:"status"`
 }

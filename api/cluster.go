@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client"
+	"sigs.k8s.io/cluster-api/cmd/clusterctl/client/tree"
 )
 
 type (
@@ -920,4 +921,45 @@ func (c *ClusterApiClient) ExecuteNodeShellCommand(nodeName, command string) err
 	}
 
 	return c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
+}
+
+func (c *ClusterApiClient) DescribeCluster(clusterName, namespace string) (*tree.ObjectTree, error) {
+	objTree, err := c.Client.DescribeCluster(client.DescribeClusterOptions{
+		Namespace:   clusterName,
+		ClusterName: namespace,
+		Kubeconfig:  client.Kubeconfig{Path: c.KubeconfigFile},
+	})
+
+	return objTree, err
+}
+
+func (c *ClusterApiClient) GetWorkloadClusterMachines(clusterName, namespace string) ([]model.CRDResource, error) {
+	b, err := c.Clientset.RESTClient().Get().
+		AbsPath("apis/cluster.x-k8s.io/v1beta1/namespaces/"+namespace+"/machines").
+		VersionedParams(&metav1.GetOptions{}, metav1.ParameterCodec).
+		DoRaw(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
+	m := map[string]interface{}{}
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, err
+	}
+
+	b, _ = json.Marshal(m["items"])
+
+	machines := []model.CRDResource{}
+	if err := json.Unmarshal(b, &machines); err != nil {
+		return nil, err
+	}
+
+	filteredMachines := []model.CRDResource{}
+	for _, machine := range machines {
+		if machine.Metadata.Labels["cluster.x-k8s.io/cluster-name"] == clusterName {
+			filteredMachines = append(filteredMachines, machine)
+		}
+	}
+
+	return filteredMachines, nil
 }
