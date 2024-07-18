@@ -86,7 +86,7 @@ func (c *OpenstackClient) doHttpRequest(request *http.Request) ([]byte, error) {
 	defer response.Body.Close()
 
 	b, err := io.ReadAll(response.Body)
-	log.Printf("Response: %q", string(b))
+	// log.Printf("Response: %q", string(b))
 	return b, err
 }
 
