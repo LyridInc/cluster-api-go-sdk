@@ -58,6 +58,9 @@ type CRDResource struct {
 		Phase string `yaml:"phase"`
 	} `yaml:"status"`
 	Spec struct {
-		ProviderID string `yaml:"providerID"`
+		ProviderID        string `yaml:"providerID"`
+		InfrastructureRef struct {
+			Name string `yaml:"name"`
+		} `yaml:"infrastructureRef"`
 	} `yaml:"spec"`
 }
