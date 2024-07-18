@@ -579,16 +579,11 @@ func TestNodeShell(t *testing.T) {
 			}
 		}
 	})
-
-	// TODO: remove nvidia taints
-	// taints:
-	//   - key: nvidia.com/gpu
-	//     effect: NoSchedule
 }
 
 // go test ./test -v -run ^TestListNodes$
 func TestListNodes(t *testing.T) {
-	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/lyrid-staging.kubeconfig")
 	nodes, err := capi.Clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -602,10 +597,21 @@ func TestListNodes(t *testing.T) {
 // go test ./test -v -run ^TestGetWorkloadClusterMachines$
 func TestGetWorkloadClusterMachines(t *testing.T) {
 	capi, _ := api.NewClusterApiClient("", "./data/lyrid-staging.kubeconfig")
-	machines, err := capi.GetWorkloadClusterMachines("lyr-kube-choqkf-hqtk", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	machines, err := capi.GetWorkloadClusterMachines("lyr-kube-ywct", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Log(machines)
+}
+
+// go test ./test -v -run ^TestGetClusterK8sMachineListResource$
+func TestGetClusterK8sMachineListResource(t *testing.T) {
+	capi, _ := api.NewClusterApiClient("", "./data/lyrid-staging.kubeconfig")
+	b, err := capi.GetWorkloadClusterMachines("xaxa-tqde", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(b)
 }
