@@ -56,6 +56,17 @@ type (
 		URL                         string
 	}
 
+	GenerateAwsWorkloadClusterOption struct {
+		Region             string
+		SshKeyName         string
+		ClusterName        string
+		Namespace          string
+		KubernetesVersion  string
+		Flavor             string
+		WorkerMachineCount int64
+		URL                string
+	}
+
 	ClusterKindSpecOption struct {
 		CidrBlocks []string
 	}
