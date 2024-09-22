@@ -67,6 +67,19 @@ type (
 		URL                string
 	}
 
+	GenerateGkeWorkloadClusterOption struct {
+		ClusterName             string
+		Namespace               string
+		KubernetesVersion       string
+		WorkerMachineCount      int64
+		ControlPlaneMachineType string
+		WorkerMachineType       string
+		URL                     string
+		Project                 string
+		Region                  string
+		NetworkName             string
+	}
+
 	ClusterKindSpecOption struct {
 		CidrBlocks []string
 	}

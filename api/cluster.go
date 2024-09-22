@@ -424,6 +424,47 @@ func (c *ClusterApiClient) GenerateAwsWorkloadClusterYaml(opt option.GenerateAws
 	return string(yaml), nil
 }
 
+func (c *ClusterApiClient) GenerateGkeWorkloadClusterYaml(opt option.GenerateGkeWorkloadClusterOption) (string, error) {
+	os.Setenv("GCP_CONTROL_PLANE_MACHINE_TYPE", opt.ControlPlaneMachineType)
+	os.Setenv("GCP_NODE_MACHINE_TYPE", opt.WorkerMachineType)
+	os.Setenv("KUBERNETES_VERSION", opt.KubernetesVersion)
+	os.Setenv("CLUSTER_NAME", opt.ClusterName)
+	os.Setenv("GCP_NETWORK_NAME", opt.NetworkName)
+	os.Setenv("GCP_PROJECT", opt.Project)
+	os.Setenv("GCP_REGION", opt.Region)
+
+	var controlMachineCount int64 = 1
+	templateOptions := client.GetClusterTemplateOptions{
+		Kubeconfig: client.Kubeconfig{
+			Path: c.KubeconfigFile,
+		},
+		ClusterName:              opt.ClusterName,
+		TargetNamespace:          opt.Namespace,
+		KubernetesVersion:        opt.KubernetesVersion,
+		ListVariablesOnly:        false,
+		WorkerMachineCount:       &opt.WorkerMachineCount,
+		ControlPlaneMachineCount: &controlMachineCount,
+	}
+
+	if opt.URL != "" {
+		templateOptions.URLSource = &client.URLSourceOptions{
+			URL: opt.URL,
+		}
+	}
+
+	template, err := c.Client.GetClusterTemplate(templateOptions)
+	if err != nil {
+		return "", err
+	}
+
+	yaml, err := template.Yaml()
+	if err != nil {
+		return "", err
+	}
+
+	return string(yaml), nil
+}
+
 func (c *ClusterApiClient) GetWorkloadClusterKubeconfig(clusterName, namespace string) (*string, error) {
 	opt := client.GetKubeconfigOptions{
 		Kubeconfig:          client.Kubeconfig{Path: c.KubeconfigFile},
