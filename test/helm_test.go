@@ -145,8 +145,8 @@ func TestHelmInstallChartWithSet(t *testing.T) {
 
 // go test ./test -v -run ^TestHelmUpgradeChart$
 func TestHelmUpgradeChart(t *testing.T) {
-	namespace := "default"
-	kubeconfig := "./data/capi-helm-testing.kubeconfig"
+	namespace := "lyrid-1c469680-5cd2-4b78-ac8e-222333660e2b"
+	kubeconfig := "./data/Devops-Labs"
 	hc, err := api.NewHelmClient(kubeconfig, namespace)
 	if err != nil {
 		t.Fatal(error.Error(err))
@@ -154,7 +154,14 @@ func TestHelmUpgradeChart(t *testing.T) {
 
 	timeout := time.Second * (5 * 60)
 
-	release, err := hc.CliUpgrade("./data/chart", "vega", namespace, nil, timeout, false, true)
+	// bigbang-v2.0.0-2024-11-25114009-df2913c
+	release, err := hc.CliUpgrade("./data/latest-vega", "vega", namespace, map[string]interface{}{
+		"vega": map[string]interface{}{
+			"image": map[string]interface{}{
+				"tag": "bigbang-v2.0.0-2024-11-25114009-df2913c",
+			},
+		},
+	}, timeout, true, true)
 	if err != nil {
 		t.Fatal(error.Error(err))
 	}

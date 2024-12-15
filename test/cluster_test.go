@@ -573,7 +573,7 @@ func TestNodeShell(t *testing.T) {
 		}
 
 		for _, node := range nodes.Items {
-			err := capi.ExecuteNodeShellCommand(node.Name, "yum --setopt=tsflags=noscripts install iscsi-initiator-utils")
+			_, err := capi.ExecuteNodeShellCommand(node.Name, "yum --setopt=tsflags=noscripts install iscsi-initiator-utils")
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -9,15 +9,20 @@ import (
 	"io"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"math/rand"
 
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	"gopkg.in/yaml.v2"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,8 +37,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
-	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client"
 	"sigs.k8s.io/cluster-api/cmd/clusterctl/client/tree"
 )
@@ -908,99 +911,168 @@ func (c *ClusterApiClient) UpdateClusterK8sResourceAnnotations(clusterName, name
 		Patch(context.TODO(), clusterName, types.JSONPatchType, b, metav1.PatchOptions{})
 }
 
-func (c *ClusterApiClient) ExecuteNodeShellCommand(nodeName, command string) error {
+func (c *ClusterApiClient) ExecuteNodeShellCommand(nodeName, command string) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyz"
+	var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	suffix := make([]byte, 4)
+	for i := range suffix {
+		suffix[i] = charset[seededRand.Intn(len(charset))]
+	}
 	var (
 		terminationGracePeriodSeconds int64 = 0
 		privilegedSecurityContext     bool  = true
-		podName                             = "node-shell-" + nodeName
+		jobName                             = "node-shell-job-" + nodeName + "-" + string(suffix)
 		namespace                           = "kube-system"
 	)
 
-	podSpec := v1.Pod{
+	log.Printf("Executing command %s on %s", command, nodeName)
+
+	var ttlSecondsAfterFinished int32 = 150
+
+	jobSpec := batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
+			Name:      jobName,
 			Namespace: namespace,
 		},
-		Spec: v1.PodSpec{
-			RestartPolicy:                 "Never",
-			TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
-			HostPID:                       true,
-			HostIPC:                       true,
-			HostNetwork:                   true,
-			Tolerations: []v1.Toleration{
-				{
-					Operator: "Exists",
-				},
-			},
-			Containers: []v1.Container{
-				{
-					Name:  "shell",
-					Image: "docker.io/alpine:3.12",
-					SecurityContext: &v1.SecurityContext{
-						Privileged: &privilegedSecurityContext,
+		Spec: batchv1.JobSpec{
+			TTLSecondsAfterFinished: &ttlSecondsAfterFinished,
+			Template: v1.PodTemplateSpec{
+				Spec: v1.PodSpec{
+					RestartPolicy:                 "Never",
+					TerminationGracePeriodSeconds: &terminationGracePeriodSeconds,
+					HostPID:                       true,
+					HostIPC:                       true,
+					HostNetwork:                   true,
+					Tolerations: []v1.Toleration{
+						{
+							Operator: "Exists",
+						},
 					},
-					Command: []string{"nsenter"},
-					Args:    []string{"-t", "1", "-m", "-u", "-i", "-n", "sleep", "14000"},
+					Containers: []v1.Container{
+						{
+							Name:  "shell",
+							Image: "ubuntu:24.04",
+							SecurityContext: &v1.SecurityContext{
+								Privileged: &privilegedSecurityContext,
+							},
+							Command: []string{"sh"},
+							Args: []string{
+								"-c",
+								"nsenter -t 1 -m -u -i -n sh -c '" + command + "'",
+							},
+						},
+					},
+					NodeSelector: map[string]string{
+						"kubernetes.io/hostname": nodeName,
+					},
 				},
-			},
-			NodeSelector: map[string]string{
-				"kubernetes.io/hostname": nodeName,
 			},
 		},
 	}
 
-	_, err := c.Clientset.CoreV1().Pods(namespace).Create(context.Background(), &podSpec, metav1.CreateOptions{})
+	// Create the Job
+	_, err := c.Clientset.BatchV1().Jobs(namespace).Create(context.Background(), &jobSpec, metav1.CreateOptions{})
 	if err != nil {
-		return err
+		if !strings.Contains(err.Error(), " already exists") {
+			return "", err
+		}
 	}
 
-	wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
-		pod, err := c.Clientset.CoreV1().Pods(namespace).Get(context.Background(), podName, metav1.GetOptions{})
+	// Wait for the Job to complete
+	err = wait.PollImmediate(3*time.Second, 2*time.Minute, func() (bool, error) {
+		job, err := c.Clientset.BatchV1().Jobs(namespace).Get(context.Background(), jobName, metav1.GetOptions{})
 		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				fmt.Printf("Job %s not created yet...\n", jobName)
+				return false, nil // Continue polling
+			}
 			return false, err
 		}
 
-		if pod.Status.Phase == "Running" {
+		if job.Status.Succeeded > 0 {
 			return true, nil
 		}
 
-		fmt.Printf("Waiting for pod %s to be in Running phase...\n", podName)
+		if job.Status.Failed > 0 {
+			err := fmt.Errorf("Job %s is failed: %v", jobName, job.Status)
+			fmt.Println(err)
+			return false, err
+		}
+
+		fmt.Printf("Waiting for job %s to complete...\n", jobName)
 		return false, nil
 	})
-
-	req := c.Clientset.CoreV1().RESTClient().
-		Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(namespace).
-		SubResource("exec").
-		VersionedParams(&v1.PodExecOptions{
-			Container: "shell",
-			Command:   strings.Split(command, " "),
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       false,
-		}, scheme.ParameterCodec)
-
-	executor, err := remotecommand.NewSPDYExecutor(c.Config, "POST", req.URL())
 	if err != nil {
-		c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
-		return err
+		return "", err
 	}
 
-	err = executor.Stream(remotecommand.StreamOptions{
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Tty:    false,
+	// Retrieve logs from the job's pod
+	pods, err := c.Clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("job-name=%s", jobName),
+	})
+	if err != nil || len(pods.Items) == 0 {
+		return "", fmt.Errorf("failed to retrieve job pod: %v", err)
+	}
+
+	sort.Slice(pods.Items, func(i, j int) bool {
+		return pods.Items[i].CreationTimestamp.Time.After(pods.Items[j].CreationTimestamp.Time)
+	})
+
+	podName := pods.Items[0].Name
+	logs, err := c.GetPodLogs(namespace, podName)
+	if err != nil {
+		return "", err
+	}
+
+	// Cleanup the job after execution
+	deletePolicy := metav1.DeletePropagationForeground
+	err = c.Clientset.BatchV1().Jobs(namespace).Delete(context.Background(), jobName, metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
 	})
 	if err != nil {
-		c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
-		return err
+		fmt.Printf("Failed to delete job %s: %v\n", jobName, err)
 	}
 
-	return c.Clientset.CoreV1().Pods(namespace).Delete(context.Background(), podName, metav1.DeleteOptions{})
+	return logs, nil
+}
+
+func (c *ClusterApiClient) GetPodLogs(namespace, podName string) (string, error) {
+	const maxAttempts = 3
+	const retryDelay = 5 * time.Second
+
+	var lastErr error
+
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &v1.PodLogOptions{})
+		logs, err := req.Stream(ctx)
+		if err != nil {
+			log.Printf("Attempt %d: Error getting stream for pod %s: %v\n", attempt, podName, err)
+			lastErr = err
+			time.Sleep(retryDelay)
+			continue
+		}
+		defer logs.Close()
+
+		var buf bytes.Buffer
+		_, err = io.Copy(&buf, logs)
+		if err != nil {
+			log.Printf("Attempt %d: Error copying log buffer for pod %s: %v\n", attempt, podName, err)
+			lastErr = err
+			time.Sleep(retryDelay)
+			continue
+		}
+
+		// Return logs on successful retrieval
+		return buf.String(), nil
+	}
+
+	// Return the last error after exhausting all attempts
+	log.Printf("Failed to get logs for pod %s after %d attempts: %v\n", podName, maxAttempts, lastErr)
+	return "", fmt.Errorf("failed to get logs for pod %s after %d attempts: %w", podName, maxAttempts, lastErr)
 }
 
 func (c *ClusterApiClient) DescribeCluster(clusterName, namespace string) (*tree.ObjectTree, error) {
