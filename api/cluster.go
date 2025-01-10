@@ -56,7 +56,7 @@ type (
 )
 
 func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, error) {
-	cl, err := client.New(configFile)
+	cl, err := client.New(context.Background(), configFile)
 	if err != nil {
 		log.Fatal("Client config error:", err)
 		return nil, err
@@ -92,7 +92,7 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 }
 
 func (c *ClusterApiClient) SetRateLimit(burst int, qps float32) error {
-	cl, err := client.New(c.ConfigFile)
+	cl, err := client.New(context.Background(), c.ConfigFile)
 	if err != nil {
 		log.Fatal("Client config error:", err)
 		return err
@@ -236,7 +236,7 @@ func (c *ClusterApiClient) InitInfrastructure(infrastructure string) ([]client.C
 		WaitProviderTimeout:     time.Duration(5*60) * time.Second,
 	}
 
-	result, err := c.Client.Init(c.InitOptions)
+	result, err := c.Client.Init(context.Background(), c.InitOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +248,7 @@ func (c *ClusterApiClient) InitInfrastructure(infrastructure string) ([]client.C
 }
 
 func (c *ClusterApiClient) DeleteInfrastructure(infrastructure string) error {
-	return c.Client.Delete(client.DeleteOptions{
+	return c.Client.Delete(context.Background(), client.DeleteOptions{
 		Kubeconfig:              client.Kubeconfig{Path: c.KubeconfigFile},
 		IncludeNamespace:        false,
 		IncludeCRDs:             false,
@@ -284,7 +284,7 @@ func (c *ClusterApiClient) GenerateWorkloadClusterYaml(opt option.GenerateWorklo
 		}
 	}
 
-	template, err := c.Client.GetClusterTemplate(templateOptions)
+	template, err := c.Client.GetClusterTemplate(context.Background(), templateOptions)
 	if err != nil {
 		return "", err
 	}
@@ -334,7 +334,7 @@ func (c *ClusterApiClient) GenerateOciWorkloadClusterYaml(opt option.GenerateOci
 		}
 	}
 
-	template, err := c.Client.GetClusterTemplate(templateOptions)
+	template, err := c.Client.GetClusterTemplate(context.Background(), templateOptions)
 	if err != nil {
 		return "", err
 	}
@@ -375,7 +375,7 @@ func (c *ClusterApiClient) GenerateCloudStackWorkloadClusterYaml(opt option.Gene
 		}
 	}
 
-	template, err := c.Client.GetClusterTemplate(templateOptions)
+	template, err := c.Client.GetClusterTemplate(context.Background(), templateOptions)
 	if err != nil {
 		return "", err
 	}
@@ -414,7 +414,7 @@ func (c *ClusterApiClient) GenerateAwsWorkloadClusterYaml(opt option.GenerateAws
 		}
 	}
 
-	template, err := c.Client.GetClusterTemplate(templateOptions)
+	template, err := c.Client.GetClusterTemplate(context.Background(), templateOptions)
 	if err != nil {
 		return "", err
 	}
@@ -455,7 +455,7 @@ func (c *ClusterApiClient) GenerateGkeWorkloadClusterYaml(opt option.GenerateGke
 		}
 	}
 
-	template, err := c.Client.GetClusterTemplate(templateOptions)
+	template, err := c.Client.GetClusterTemplate(context.Background(), templateOptions)
 	if err != nil {
 		return "", err
 	}
@@ -475,7 +475,7 @@ func (c *ClusterApiClient) GetWorkloadClusterKubeconfig(clusterName, namespace s
 		Namespace:           namespace,
 	}
 
-	out, err := c.Client.GetKubeconfig(opt)
+	out, err := c.Client.GetKubeconfig(context.Background(), opt)
 	if err != nil {
 		return nil, err
 	}
@@ -1076,7 +1076,7 @@ func (c *ClusterApiClient) GetPodLogs(namespace, podName string) (string, error)
 }
 
 func (c *ClusterApiClient) DescribeCluster(clusterName, namespace string) (*tree.ObjectTree, error) {
-	objTree, err := c.Client.DescribeCluster(client.DescribeClusterOptions{
+	objTree, err := c.Client.DescribeCluster(context.Background(), client.DescribeClusterOptions{
 		Namespace:   clusterName,
 		ClusterName: namespace,
 		Kubeconfig:  client.Kubeconfig{Path: c.KubeconfigFile},
