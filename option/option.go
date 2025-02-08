@@ -143,11 +143,11 @@ var OPENSTACK_CLOUD_CONTROLLER_MANIFEST_URLS = []string{
 var OPENSTACK_CINDER_DRIVER_MANIFEST_URLS = map[string]interface{}{
 	"secret": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/v1.31.2/manifests/cinder-csi-plugin/csi-secret-cinderplugin.yaml",
 	"plugins": []string{
-		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/csi-cinder-driver.yaml",
-		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml",
-		"https://storage.lyrid.io/client/vega-configs-template/edited-cinder-csi-controllerplugin.yaml",
-		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin-rbac.yaml",
-		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/v1.31.2/manifests/cinder-csi-plugin/csi-cinder-driver.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/v1.31.2/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/v1.31.2/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/v1.31.2/manifests/cinder-csi-plugin/cinder-csi-nodeplugin-rbac.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/v1.31.2/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml",
 	},
 }
 
