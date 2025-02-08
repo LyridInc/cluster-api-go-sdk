@@ -376,7 +376,13 @@ func (c *SimpleRESTClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
 	}
 
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(discoveryClient)
-	expander := restmapper.NewShortcutExpander(mapper, discoveryClient)
+
+	// Provide a no-op logger function
+	noOpLogger := func(message string) {
+		// Do nothing or log as needed
+	}
+
+	expander := restmapper.NewShortcutExpander(mapper, discoveryClient, noOpLogger)
 	return expander, nil
 }
 
