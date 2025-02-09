@@ -151,6 +151,17 @@ var OPENSTACK_CINDER_DRIVER_MANIFEST_URLS = map[string]interface{}{
 	},
 }
 
+var OPENSTACK_CINDER_DRIVER_MANIFEST_TEMPLATE_URLS = map[string]interface{}{
+	"secret": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/{version}/manifests/cinder-csi-plugin/csi-secret-cinderplugin.yaml",
+	"plugins": []string{
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/{version}/manifests/cinder-csi-plugin/csi-cinder-driver.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/{version}/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/{version}/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/{version}/manifests/cinder-csi-plugin/cinder-csi-nodeplugin-rbac.yaml",
+		"https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/refs/tags/{version}/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml",
+	},
+}
+
 var OPENSTACK_CINDER_STORAGE_URLS = map[string]string{
 	"block": "https://raw.githubusercontent.com/kubernetes/cloud-provider-openstack/master/examples/cinder-csi-plugin/block/block.yaml",
 }
