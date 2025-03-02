@@ -308,7 +308,7 @@ func setHelmValue(vals map[string]interface{}, v string) (map[string]interface{}
 		return vals, fmt.Errorf("incorrect format for helm value '%s'", v)
 	}
 	var val interface{}
-	if strings.HasSuffix(split[0], ".enabled") {
+	if strings.HasSuffix(split[0], ".enabled") || strings.HasSuffix(split[0], ".usePasswordFiles") {
 		vv, err := strconv.ParseBool(split[1])
 		if err != nil {
 			return vals, fmt.Errorf("incorrect data type for '%s'", v)
