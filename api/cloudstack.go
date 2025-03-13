@@ -8,6 +8,8 @@ type ICloudStackClient interface {
 	ListPublicIpAddresses(zoneID, state string) (*cloudstack.ListPublicIpAddressesResponse, error)
 	CreateSSHKeypair(keypairName string) (*cloudstack.CreateSSHKeyPairResponse, error)
 	GetZoneByID(zoneID string) (*cloudstack.Zone, error)
+	ListAffinityGroups() (*cloudstack.ListAffinityGroupsResponse, error)
+	GetAffinityGroupsByDomainId(domainId string) (*cloudstack.ListAffinityGroupsResponse, error)
 }
 
 type CloudStackClient struct {
@@ -27,6 +29,17 @@ func (cl *CloudStackClient) ListPublicIpAddresses(zoneID, state string) (*clouds
 	params.SetState(state)
 
 	return cl.Client.Address.ListPublicIpAddresses(&params)
+}
+
+func (cl *CloudStackClient) ListAffinityGroups() (*cloudstack.ListAffinityGroupsResponse, error) {
+	params := cloudstack.ListAffinityGroupsParams{}
+	return cl.Client.AffinityGroup.ListAffinityGroups(&params)
+}
+
+func (cl *CloudStackClient) GetAffinityGroupsByDomainId(domainId string) (*cloudstack.ListAffinityGroupsResponse, error) {
+	params := cloudstack.ListAffinityGroupsParams{}
+	params.SetDomainid(domainId)
+	return cl.Client.AffinityGroup.ListAffinityGroups(&params)
 }
 
 func (cl *CloudStackClient) CreateSSHKeypair(keypairName string) (*cloudstack.CreateSSHKeyPairResponse, error) {

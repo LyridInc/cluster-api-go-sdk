@@ -2,6 +2,7 @@ package test
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -144,4 +145,25 @@ func TestCreateCloudStackSSHKeypair(t *testing.T) {
 	}
 
 	t.Log(resp.Privatekey)
+}
+
+// go test ./test -v -run ^TestGetListAffinityGroups$
+func TestGetListAffinityGroups(t *testing.T) {
+	apiUrl := os.Getenv("CLOUDSTACK_API_URL")
+	apiKey := os.Getenv("CLOUDSTACK_API_KEY")
+	secret := os.Getenv("CLOUDSTACK_SECRET")
+	cl := api.NewCloudStackClient(apiUrl, apiKey, secret, true)
+
+	resp, err := cl.GetAffinityGroupsByDomainId("8ee23300-db21-47f7-81ad-31772e2839b0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	affinityGroups := []string{}
+	for _, affinityGroup := range resp.AffinityGroups {
+		b, _ := json.Marshal(affinityGroup)
+		affinityGroups = append(affinityGroups, string(b))
+	}
+	t.Log(affinityGroups)
+	t.Log(len(affinityGroups))
 }
