@@ -356,6 +356,7 @@ func (c *ClusterApiClient) GenerateCloudStackWorkloadClusterYaml(opt option.Gene
 	os.Setenv("CLOUDSTACK_WORKER_MACHINE_OFFERING", opt.WorkerMachineOffering)
 	os.Setenv("CLOUDSTACK_TEMPLATE_NAME", opt.TemplateName)
 	os.Setenv("CLOUDSTACK_SSH_KEY_NAME", opt.SshKeyName)
+	os.Setenv("CLOUDSTACK_AFFINITY_GROUP_ID", opt.AffinityGroupId)
 
 	templateOptions := client.GetClusterTemplateOptions{
 		Kubeconfig: client.Kubeconfig{
