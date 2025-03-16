@@ -54,6 +54,7 @@ type (
 		WorkerMachineCount          int64
 		ControlPlaneMachineCount    int64
 		URL                         string
+		AffinityGroupId             string
 	}
 
 	GenerateAwsWorkloadClusterOption struct {
