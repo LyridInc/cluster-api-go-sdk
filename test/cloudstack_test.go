@@ -159,6 +159,8 @@ func TestGetListAffinityGroups(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// [{"account":"system","description":"dedicated resources group","domain":"Lyrid-AC-DBaaS","domainid":"8ee23300-db21-47f7-81ad-31772e2839b0","id":"b460c681-9419-4c3a-8dc9-2e1c2b149635","name":"DedicatedGrp-domain-Lyrid-AC-DBaaS","project":"","projectid":"","type":"ExplicitDedication","virtualmachineIds":["b3cfe489-b73d-4198-b6f4-3d7218565733","fa50e6c1-e438-44cc-905d-fabd150b3e59"]}]
+
 	affinityGroups := []string{}
 	for _, affinityGroup := range resp.AffinityGroups {
 		b, _ := json.Marshal(affinityGroup)
