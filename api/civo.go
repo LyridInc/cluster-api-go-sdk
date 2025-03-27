@@ -13,9 +13,13 @@ import (
 
 type ICivoClient interface {
 	ListClusters(queryParams map[string]string) ([]byte, error)
-	CreateCluster(args CivoCreateClusterArgs) ([]byte, error)
+
+	CreateCluster(args model.CivoCreateClusterArgs) ([]byte, error)
+	CreateNetwork(args model.CivoCreateNetworkArgs) ([]byte, error)
+
 	GetCluster(id string) ([]byte, error)
 	GetClusterDetail(id string) ([]byte, error)
+
 	DeleteCluster(id string) ([]byte, error)
 
 	ListNetworks(queryParams map[string]string) ([]model.CivoNetworkResponse, error)
@@ -29,19 +33,6 @@ type ICivoClient interface {
 type CivoClient struct {
 	APIToken    string
 	APIEndpoint string
-}
-
-type CivoCreateClusterArgs struct {
-	Name              string           `json:"name,omitempty"`
-	NetworkID         string           `json:"network_id,omitempty"`
-	Region            string           `json:"region,omitempty"`
-	CNIPlugin         string           `json:"cni_plugin,omitempty"`
-	Pools             []model.CivoPool `json:"pools,omitempty"`
-	KubernetesVersion string           `json:"kubernetes_version,omitempty"`
-	Tags              string           `json:"tags,omitempty"`
-	InstanceFirewall  string           `json:"instance_firewall,omitempty"`
-	FirewallRule      string           `json:"firewall_rule,omitempty"`
-	Applications      string           `json:"applications,omitempty"`
 }
 
 func NewCivoClient(token, endpoint string) ICivoClient {
@@ -89,12 +80,27 @@ func (cl *CivoClient) ListClusters(queryParams map[string]string) ([]byte, error
 	return cl.doHttpRequest(request)
 }
 
-func (cl *CivoClient) CreateCluster(args CivoCreateClusterArgs) ([]byte, error) {
+func (cl *CivoClient) CreateCluster(args model.CivoCreateClusterArgs) ([]byte, error) {
 	argsByte, err := json.Marshal(args)
 	if err != nil {
 		return nil, err
 	}
 	request, err := http.NewRequest("POST", cl.APIEndpoint+"/v2/kubernetes/clusters", bytes.NewBuffer(argsByte))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *CivoClient) CreateNetwork(args model.CivoCreateNetworkArgs) ([]byte, error) {
+	argsByte, err := json.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	request, err := http.NewRequest("POST", cl.APIEndpoint+"/v2/networks", bytes.NewBuffer(argsByte))
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +131,7 @@ func (cl *CivoClient) GetClusterDetail(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) DeleteCluster(id string) ([]byte, error) {
-	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/kubernetes/cluster/"+id, nil)
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id, nil)
 	if err != nil {
 		return nil, err
 	}

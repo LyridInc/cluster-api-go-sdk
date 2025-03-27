@@ -15,9 +15,9 @@ func TestCreateCivoCluster(t *testing.T) {
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	args := api.CivoCreateClusterArgs{
+	args := model.CivoCreateClusterArgs{
 		Name:      "lyrid-sdk",
-		NetworkID: "8674acc1-2fcd-4880-b62c-4605f5fe578d",
+		NetworkID: "427b05bd-38a3-40f4-b339-b87634221ca2",
 		Region:    "NYC1",
 		CNIPlugin: "flannel",
 		Pools: []model.CivoPool{
@@ -27,7 +27,7 @@ func TestCreateCivoCluster(t *testing.T) {
 				Size:  "g4s.kube.medium",
 			},
 		},
-		KubernetesVersion: "1.29.8-k3s1 ",
+		KubernetesVersion: "1.29.8-k3s1",
 		InstanceFirewall:  "6cbf5e4c-6256-4f37-80b2-7cdab7d0ac1c",
 	}
 
@@ -193,12 +193,54 @@ func TestGetCivoClusterDetail(t *testing.T) {
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	res, err := client.GetClusterDetail("33030763-1b6e-44bb-9399-6c14932c5a44")
+	res, err := client.GetClusterDetail("dc1913e8-4c49-41f5-9a44-ae794294aa4e")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	b, _ := json.Marshal(res)
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestCreateCivoNetwork$
+func TestCreateCivoNetwork(t *testing.T) {
+	token := os.Getenv("CIVO_TOKEN")
+	endpoint := os.Getenv("CIVO_API_ENDPOINT")
+	client := api.NewCivoClient(token, endpoint)
+
+	args := model.CivoCreateNetworkArgs{
+		Label:  "lyrid-sdk-network",
+		Region: "NYC1",
+	}
+
+	res, err := client.CreateNetwork(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(res)
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestDeleteCivoCluster$
+func TestDeleteCivoCluster(t *testing.T) {
+	token := os.Getenv("CIVO_TOKEN")
+	endpoint := os.Getenv("CIVO_API_ENDPOINT")
+	client := api.NewCivoClient(token, endpoint)
+
+	res, err := client.DeleteCluster("33030763-1b6e-44bb-9399-6c14932c5a44")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(res)
+	// eyJpZCI6IjMzMDMwNzYzLTFiNmUtNDRiYi05Mzk5LTZjMTQ5MzJjNWE0NCIsInJlc3VsdCI6InN1Y2Nlc3MifQo=
+	// {
+	// 	"id": "33030763-1b6e-44bb-9399-6c14932c5a44",
+	// 	"result": "success"
+	// }
 
 	t.Log(string(b))
 }

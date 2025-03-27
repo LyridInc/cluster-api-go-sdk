@@ -74,3 +74,29 @@ type CivoPool struct {
 	Size  string `json:"size"`
 	Count int    `json:"count"`
 }
+
+type CivoCreateClusterArgs struct {
+	Name              string     `json:"name,omitempty"`
+	NetworkID         string     `json:"network_id,omitempty"`
+	Region            string     `json:"region,omitempty"`
+	CNIPlugin         string     `json:"cni_plugin,omitempty"`
+	Pools             []CivoPool `json:"pools,omitempty"`
+	KubernetesVersion string     `json:"kubernetes_version,omitempty"`
+	Tags              string     `json:"tags,omitempty"`
+	InstanceFirewall  string     `json:"instance_firewall,omitempty"`
+	FirewallRule      string     `json:"firewall_rule,omitempty"`
+	Applications      string     `json:"applications,omitempty"`
+}
+
+type CivoCreateNetworkArgs struct {
+	Label         string `json:"label,omitempty"`
+	Region        string `json:"region,omitempty"`
+	CidrV4        string `json:"cidr_v4,omitempty"`
+	NameserversV4 string `json:"nameservers_v4,omitempty"`
+}
+
+type CivoCreateNetworkResponse struct {
+	ID     string `json:"id,omitempty"`
+	Label  string `json:"label,omitempty"`
+	Result string `json:"result,omitempty"`
+}
