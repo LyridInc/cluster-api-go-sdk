@@ -9,6 +9,8 @@ import (
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 )
 
+// export $(< test.env)
+
 // go test ./test -v -run ^TestCreateCivoCluster$
 func TestCreateCivoCluster(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
@@ -193,7 +195,7 @@ func TestGetCivoClusterDetail(t *testing.T) {
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	res, err := client.GetClusterDetail("dc1913e8-4c49-41f5-9a44-ae794294aa4e")
+	res, err := client.GetClusterDetail("eb3e277f-5af6-47fa-b24f-6e3819348936")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -219,9 +221,7 @@ func TestCreateCivoNetwork(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b, _ := json.Marshal(res)
-
-	t.Log(string(b))
+	t.Log(string(res))
 }
 
 // go test ./test -v -run ^TestDeleteCivoCluster$
@@ -230,7 +230,12 @@ func TestDeleteCivoCluster(t *testing.T) {
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	res, err := client.DeleteCluster("33030763-1b6e-44bb-9399-6c14932c5a44")
+	// res, err := client.DeleteCluster("eb3e277f-5af6-47fa-b24f-6e3819348936")
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+
+	res, err := client.DeleteNetwork("bfb7c6ca-3675-4608-bdb1-3b92c47f2152")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,6 +246,38 @@ func TestDeleteCivoCluster(t *testing.T) {
 	// 	"id": "33030763-1b6e-44bb-9399-6c14932c5a44",
 	// 	"result": "success"
 	// }
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestGetCivoNetworkDetail$
+func TestGetCivoNetworkDetail(t *testing.T) {
+	token := os.Getenv("CIVO_TOKEN")
+	endpoint := os.Getenv("CIVO_API_ENDPOINT")
+	client := api.NewCivoClient(token, endpoint)
+
+	res, err := client.GetNetworkDetail("8674acc1-2fcd-4880-b62c-4605f5fe578d")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(res)
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestGetCivoFirewallDetail$
+func TestGetCivoFirewallDetail(t *testing.T) {
+	token := os.Getenv("CIVO_TOKEN")
+	endpoint := os.Getenv("CIVO_API_ENDPOINT")
+	client := api.NewCivoClient(token, endpoint)
+
+	res, err := client.GetFirewallDetail("6cbf5e4c-6256-4f37-80b2-7cdab7d0ac1c")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(res)
 
 	t.Log(string(b))
 }

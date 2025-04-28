@@ -19,8 +19,12 @@ type ICivoClient interface {
 
 	GetCluster(id string) ([]byte, error)
 	GetClusterDetail(id string) ([]byte, error)
+	GetNetworkDetail(id string) ([]byte, error)
+	GetFirewallDetail(id string) ([]byte, error)
 
 	DeleteCluster(id string) ([]byte, error)
+	DeleteNetwork(id string) ([]byte, error)
+	DeleteFirewall(id string) ([]byte, error)
 
 	ListNetworks(queryParams map[string]string) ([]model.CivoNetworkResponse, error)
 	ListInstanceSizes(queryParams map[string]string) ([]model.CivoInstanceSizeResponse, error)
@@ -130,8 +134,48 @@ func (cl *CivoClient) GetClusterDetail(id string) ([]byte, error) {
 	return cl.doHttpRequest(request)
 }
 
+func (cl *CivoClient) GetNetworkDetail(id string) ([]byte, error) {
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/networks/"+id, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *CivoClient) GetFirewallDetail(id string) ([]byte, error) {
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/firewalls/"+id, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
 func (cl *CivoClient) DeleteCluster(id string) ([]byte, error) {
 	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *CivoClient) DeleteNetwork(id string) ([]byte, error) {
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/networks/"+id, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *CivoClient) DeleteFirewall(id string) ([]byte, error) {
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/firewalls/"+id, nil)
 	if err != nil {
 		return nil, err
 	}
