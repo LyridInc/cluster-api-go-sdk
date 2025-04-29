@@ -100,3 +100,15 @@ type CivoCreateNetworkResponse struct {
 	Label  string `json:"label,omitempty"`
 	Result string `json:"result,omitempty"`
 }
+
+type CivoCreateFirewallArgs struct {
+	Name      string `json:"name,omitempty"`
+	Region    string `json:"region,omitempty"`
+	NetworkID string `json:"network_id,omitempty"`
+}
+
+type CivoCreateFirewallResponse struct {
+	ID     string `json:"id,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Result string `json:"result,omitempty"`
+}

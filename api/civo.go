@@ -16,6 +16,7 @@ type ICivoClient interface {
 
 	CreateCluster(args model.CivoCreateClusterArgs) ([]byte, error)
 	CreateNetwork(args model.CivoCreateNetworkArgs) ([]byte, error)
+	CreateFirewall(args model.CivoCreateFirewallArgs) ([]byte, error)
 
 	GetCluster(id string) ([]byte, error)
 	GetClusterDetail(id string) ([]byte, error)
@@ -105,6 +106,21 @@ func (cl *CivoClient) CreateNetwork(args model.CivoCreateNetworkArgs) ([]byte, e
 		return nil, err
 	}
 	request, err := http.NewRequest("POST", cl.APIEndpoint+"/v2/networks", bytes.NewBuffer(argsByte))
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *CivoClient) CreateFirewall(args model.CivoCreateFirewallArgs) ([]byte, error) {
+	argsByte, err := json.Marshal(args)
+	if err != nil {
+		return nil, err
+	}
+	request, err := http.NewRequest("POST", cl.APIEndpoint+"/v2/firewalls", bytes.NewBuffer(argsByte))
 	if err != nil {
 		return nil, err
 	}

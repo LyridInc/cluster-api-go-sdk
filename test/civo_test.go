@@ -19,7 +19,7 @@ func TestCreateCivoCluster(t *testing.T) {
 
 	args := model.CivoCreateClusterArgs{
 		Name:      "lyrid-sdk",
-		NetworkID: "427b05bd-38a3-40f4-b339-b87634221ca2",
+		NetworkID: "ab609586-ef67-451c-8ddc-962b5d06ae39",
 		Region:    "NYC1",
 		CNIPlugin: "flannel",
 		Pools: []model.CivoPool{
@@ -30,8 +30,11 @@ func TestCreateCivoCluster(t *testing.T) {
 			},
 		},
 		KubernetesVersion: "1.29.8-k3s1",
-		InstanceFirewall:  "6cbf5e4c-6256-4f37-80b2-7cdab7d0ac1c",
+		InstanceFirewall:  "a317327b-3103-4412-9d26-4f5d2bea7a5b",
+		Applications:      "metrics-server,traefik2-nodeport",
 	}
+
+	// metrics-server, traefik2-nodeport
 
 	res, err := client.CreateCluster(args)
 	if err != nil {
@@ -224,18 +227,43 @@ func TestCreateCivoNetwork(t *testing.T) {
 	t.Log(string(res))
 }
 
+// go test ./test -v -run ^TestCreateCivoFirewall$
+func TestCreateCivoFirewall(t *testing.T) {
+	token := os.Getenv("CIVO_TOKEN")
+	endpoint := os.Getenv("CIVO_API_ENDPOINT")
+	client := api.NewCivoClient(token, endpoint)
+
+	args := model.CivoCreateFirewallArgs{
+		Name:      "lyrid-sdk-firewall",
+		Region:    "NYC1",
+		NetworkID: "ab609586-ef67-451c-8ddc-962b5d06ae39",
+	}
+
+	res, err := client.CreateFirewall(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(string(res))
+}
+
 // go test ./test -v -run ^TestDeleteCivoCluster$
 func TestDeleteCivoCluster(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	// res, err := client.DeleteCluster("eb3e277f-5af6-47fa-b24f-6e3819348936")
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	res, err := client.DeleteCluster("eb3e277f-5af6-47fa-b24f-6e3819348936")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	res, err := client.DeleteNetwork("bfb7c6ca-3675-4608-bdb1-3b92c47f2152")
+	res, err = client.DeleteNetwork("bfb7c6ca-3675-4608-bdb1-3b92c47f2152")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err = client.DeleteFirewall("bfb7c6ca-3675-4608-bdb1-3b92c47f2152")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -246,6 +274,22 @@ func TestDeleteCivoCluster(t *testing.T) {
 	// 	"id": "33030763-1b6e-44bb-9399-6c14932c5a44",
 	// 	"result": "success"
 	// }
+
+	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestDeleteCivoNetwork$
+func TestDeleteCivoNetwork(t *testing.T) {
+	token := os.Getenv("CIVO_TOKEN")
+	endpoint := os.Getenv("CIVO_API_ENDPOINT")
+	client := api.NewCivoClient(token, endpoint)
+
+	res, err := client.DeleteNetwork("ec32a44d-59da-42e3-8326-94c44b383986")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, _ := json.Marshal(res)
 
 	t.Log(string(b))
 }
