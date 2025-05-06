@@ -198,14 +198,16 @@ func TestGetCivoClusterDetail(t *testing.T) {
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	res, err := client.GetClusterDetail("eb3e277f-5af6-47fa-b24f-6e3819348936")
+	res, err := client.GetClusterDetail("8bb8d67b-2480-430c-96b0-10ced761889f")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, _ := json.Marshal(res)
+	detail := model.CivoClusterDetailResponse{}
+	json.Unmarshal(res, &detail)
+	// "status":"ACTIVE","ready":true
 
-	t.Log(string(b))
+	t.Log(string(res))
 }
 
 // go test ./test -v -run ^TestCreateCivoNetwork$
