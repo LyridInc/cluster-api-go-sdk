@@ -71,12 +71,6 @@ type CivoConfigValue struct {
 	Value string `json:"value"`
 }
 
-type CivoPool struct {
-	ID    string `json:"id"`
-	Size  string `json:"size"`
-	Count int    `json:"count"`
-}
-
 type CivoCreateClusterArgs struct {
 	Name              string     `json:"name,omitempty"`
 	NetworkID         string     `json:"network_id,omitempty"`
@@ -131,7 +125,7 @@ type CivoClusterDetailResponse struct {
 	CreatedAt             time.Time          `json:"created_at"`
 	UpgradeAvailableTo    string             `json:"upgrade_available_to"`
 	MasterIP              string             `json:"master_ip"`
-	Pools                 []Pool             `json:"pools"`
+	Pools                 []CivoPool         `json:"pools"`
 	RequiredPools         []CivoRequiredPool `json:"required_pools"`
 	FirewallID            string             `json:"firewall_id"`
 	MasterIPv6            string             `json:"master_ipv6"`
@@ -145,7 +139,7 @@ type CivoClusterDetailResponse struct {
 	InstalledApplications []CivoApplication  `json:"installed_applications"`
 }
 
-type Pool struct {
+type CivoPool struct {
 	ID            string         `json:"id"`
 	Size          string         `json:"size"`
 	Count         int            `json:"count"`
@@ -185,20 +179,20 @@ type CivoInstance struct {
 	RAMMB           int               `json:"ram_mb"`
 	DiskGB          int               `json:"disk_gb"`
 	CreatedAt       time.Time         `json:"created_at"`
-	AttachedVolumes interface{}       `json:"attached_volumes"`
+	AttachedVolumes any               `json:"attached_volumes"`
 	PlacementRule   CivoPlacementRule `json:"placement_rule"`
 }
 
 type CivoPlacementRule struct {
-	AffinityRules interface{} `json:"affinity_rules"`
-	NodeSelector  interface{} `json:"node_selector"`
+	AffinityRules any `json:"affinity_rules"`
+	NodeSelector  any `json:"node_selector"`
 }
 
 type CivoApplication struct {
 	Application      string                 `json:"application"`
 	Title            string                 `json:"title"`
 	Version          string                 `json:"version"`
-	Dependencies     interface{}            `json:"dependencies"`
+	Dependencies     any                    `json:"dependencies"`
 	Maintainer       string                 `json:"maintainer"`
 	Description      string                 `json:"description"`
 	PostInstall      string                 `json:"post_install"`
