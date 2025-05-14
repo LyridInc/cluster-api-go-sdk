@@ -219,6 +219,7 @@ func TestCreateCivoNetwork(t *testing.T) {
 	args := model.CivoCreateNetworkArgs{
 		Label:  "lyrid-sdk-network",
 		Region: "NYC1",
+		CidrV4: "192.168.50.0/24",
 	}
 
 	res, err := client.CreateNetwork(args)
@@ -286,14 +287,12 @@ func TestDeleteCivoNetwork(t *testing.T) {
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
 	client := api.NewCivoClient(token, endpoint)
 
-	res, err := client.DeleteNetwork("ec32a44d-59da-42e3-8326-94c44b383986")
+	res, err := client.DeleteNetwork("9976ab10-8733-4911-99ba-9159eab4e1ca")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, _ := json.Marshal(res)
-
-	t.Log(string(b))
+	t.Log(string(res))
 }
 
 // go test ./test -v -run ^TestGetCivoNetworkDetail$
