@@ -18,7 +18,6 @@ type ICivoClient interface {
 	CreateNetwork(args model.CivoCreateNetworkArgs) ([]byte, error)
 	CreateFirewall(args model.CivoCreateFirewallArgs) ([]byte, error)
 
-	GetCluster(id string) ([]byte, error)
 	GetClusterDetail(id string) ([]byte, error)
 	GetNetworkDetail(id string) ([]byte, error)
 	GetFirewallDetail(id string) ([]byte, error)
@@ -38,12 +37,17 @@ type ICivoClient interface {
 type CivoClient struct {
 	APIToken    string
 	APIEndpoint string
+	Region      string
 }
 
-func NewCivoClient(token, endpoint string) ICivoClient {
+func NewCivoClient(token, endpoint, region string) ICivoClient {
+	if region == "" {
+		region = "NYC1"
+	}
 	return &CivoClient{
 		APIToken:    token,
 		APIEndpoint: endpoint,
+		Region:      region,
 	}
 }
 
@@ -66,7 +70,7 @@ func (cl *CivoClient) doHttpRequest(request *http.Request) ([]byte, error) {
 }
 
 func (cl *CivoClient) ListClusters(queryParams map[string]string) ([]byte, error) {
-	baseURL := cl.APIEndpoint + "/v2/kubernetes/clusters"
+	baseURL := cl.APIEndpoint + "/v2/kubernetes/clusters?region=" + cl.Region
 
 	if len(queryParams) > 0 {
 		q := url.Values{}
@@ -130,18 +134,8 @@ func (cl *CivoClient) CreateFirewall(args model.CivoCreateFirewallArgs) ([]byte,
 	return cl.doHttpRequest(request)
 }
 
-func (cl *CivoClient) GetCluster(id string) ([]byte, error) {
-	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id, nil)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
-
-	return cl.doHttpRequest(request)
-}
-
 func (cl *CivoClient) GetClusterDetail(id string) ([]byte, error) {
-	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id, nil)
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id+"?region="+cl.Region, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +145,7 @@ func (cl *CivoClient) GetClusterDetail(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) GetNetworkDetail(id string) ([]byte, error) {
-	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/networks/"+id, nil)
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/networks/"+id+"?region="+cl.Region, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +155,7 @@ func (cl *CivoClient) GetNetworkDetail(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) GetFirewallDetail(id string) ([]byte, error) {
-	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/firewalls/"+id, nil)
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/v2/firewalls/"+id+"?region="+cl.Region, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +165,7 @@ func (cl *CivoClient) GetFirewallDetail(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) DeleteCluster(id string) ([]byte, error) {
-	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id, nil)
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/kubernetes/clusters/"+id+"?region="+cl.Region, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +175,7 @@ func (cl *CivoClient) DeleteCluster(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) DeleteNetwork(id string) ([]byte, error) {
-	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/networks/"+id, nil)
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/networks/"+id+"?region="+cl.Region, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +185,7 @@ func (cl *CivoClient) DeleteNetwork(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) DeleteFirewall(id string) ([]byte, error) {
-	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/firewalls/"+id, nil)
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/v2/firewalls/"+id+"?region="+cl.Region, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +195,7 @@ func (cl *CivoClient) DeleteFirewall(id string) ([]byte, error) {
 }
 
 func (cl *CivoClient) ListFirewallRules(id string) ([]model.CivoFirewallRuleResponse, error) {
-	baseURL := cl.APIEndpoint + "/v2/firewalls/" + id + "/rules"
+	baseURL := cl.APIEndpoint + "/v2/firewalls/" + id + "/rules" + "?region=" + cl.Region
 
 	request, err := http.NewRequest("GET", baseURL, nil)
 	if err != nil {
@@ -223,7 +217,7 @@ func (cl *CivoClient) ListFirewallRules(id string) ([]model.CivoFirewallRuleResp
 }
 
 func (cl *CivoClient) ListFirewalls(queryParams map[string]string) ([]model.CivoFirewallResponse, error) {
-	baseURL := cl.APIEndpoint + "/v2/firewalls"
+	baseURL := cl.APIEndpoint + "/v2/firewalls" + "?region=" + cl.Region
 
 	if len(queryParams) > 0 {
 		q := url.Values{}
@@ -253,7 +247,7 @@ func (cl *CivoClient) ListFirewalls(queryParams map[string]string) ([]model.Civo
 }
 
 func (cl *CivoClient) ListInstanceSizes(queryParams map[string]string) ([]model.CivoInstanceSizeResponse, error) {
-	baseURL := cl.APIEndpoint + "/v2/sizes"
+	baseURL := cl.APIEndpoint + "/v2/sizes" + "?region=" + cl.Region
 
 	if len(queryParams) > 0 {
 		q := url.Values{}
@@ -283,7 +277,7 @@ func (cl *CivoClient) ListInstanceSizes(queryParams map[string]string) ([]model.
 }
 
 func (cl *CivoClient) ListKubernetesVersions(queryParams map[string]string) ([]model.CivoKubernetesVersionResponse, error) {
-	baseURL := cl.APIEndpoint + "/v2/kubernetes/versions"
+	baseURL := cl.APIEndpoint + "/v2/kubernetes/versions" + "?region=" + cl.Region
 
 	if len(queryParams) > 0 {
 		q := url.Values{}
@@ -313,7 +307,7 @@ func (cl *CivoClient) ListKubernetesVersions(queryParams map[string]string) ([]m
 }
 
 func (cl *CivoClient) ListMarketplaceApplications(queryParams map[string]string) ([]model.CivoMarketplaceItemResponse, error) {
-	baseURL := cl.APIEndpoint + "/v2/kubernetes/applications"
+	baseURL := cl.APIEndpoint + "/v2/kubernetes/applications" + "?region=" + cl.Region
 
 	if len(queryParams) > 0 {
 		q := url.Values{}
@@ -343,7 +337,7 @@ func (cl *CivoClient) ListMarketplaceApplications(queryParams map[string]string)
 }
 
 func (cl *CivoClient) ListNetworks(queryParams map[string]string) ([]model.CivoNetworkResponse, error) {
-	baseURL := cl.APIEndpoint + "/v2/networks"
+	baseURL := cl.APIEndpoint + "/v2/networks" + "?region=" + cl.Region
 
 	if len(queryParams) > 0 {
 		q := url.Values{}

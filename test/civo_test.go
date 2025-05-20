@@ -15,7 +15,7 @@ import (
 func TestCreateCivoCluster(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	args := model.CivoCreateClusterArgs{
 		Name:      "lyrid-sdk",
@@ -98,7 +98,7 @@ func TestCreateCivoCluster(t *testing.T) {
 func TestListInstanceSizes(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.ListInstanceSizes(nil)
 	if err != nil {
@@ -123,7 +123,7 @@ func TestListInstanceSizes(t *testing.T) {
 func TestListNetworks(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.ListNetworks(nil)
 	if err != nil {
@@ -140,7 +140,7 @@ func TestListNetworks(t *testing.T) {
 func TestListKubernetesVersions(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.ListKubernetesVersions(nil)
 	if err != nil {
@@ -163,7 +163,7 @@ func TestListKubernetesVersions(t *testing.T) {
 func TestListFirewalls(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.ListFirewalls(nil)
 	if err != nil {
@@ -180,7 +180,7 @@ func TestListFirewalls(t *testing.T) {
 func TestListFirewallRules(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.ListFirewallRules("6cbf5e4c-6256-4f37-80b2-7cdab7d0ac1c")
 	if err != nil {
@@ -196,7 +196,7 @@ func TestListFirewallRules(t *testing.T) {
 func TestGetCivoClusterDetail(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.GetClusterDetail("8bb8d67b-2480-430c-96b0-10ced761889f")
 	if err != nil {
@@ -214,7 +214,7 @@ func TestGetCivoClusterDetail(t *testing.T) {
 func TestCreateCivoNetwork(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	args := model.CivoCreateNetworkArgs{
 		Label:  "lyrid-sdk-network",
@@ -234,7 +234,7 @@ func TestCreateCivoNetwork(t *testing.T) {
 func TestCreateCivoFirewall(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	args := model.CivoCreateFirewallArgs{
 		Name:      "lyrid-sdk-firewall",
@@ -254,7 +254,7 @@ func TestCreateCivoFirewall(t *testing.T) {
 func TestDeleteCivoCluster(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.DeleteCluster("eb3e277f-5af6-47fa-b24f-6e3819348936")
 	if err != nil {
@@ -285,7 +285,7 @@ func TestDeleteCivoCluster(t *testing.T) {
 func TestDeleteCivoNetwork(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.DeleteNetwork("9976ab10-8733-4911-99ba-9159eab4e1ca")
 	if err != nil {
@@ -299,7 +299,7 @@ func TestDeleteCivoNetwork(t *testing.T) {
 func TestGetCivoNetworkDetail(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.GetNetworkDetail("8674acc1-2fcd-4880-b62c-4605f5fe578d")
 	if err != nil {
@@ -315,7 +315,7 @@ func TestGetCivoNetworkDetail(t *testing.T) {
 func TestGetCivoFirewallDetail(t *testing.T) {
 	token := os.Getenv("CIVO_TOKEN")
 	endpoint := os.Getenv("CIVO_API_ENDPOINT")
-	client := api.NewCivoClient(token, endpoint)
+	client := api.NewCivoClient(token, endpoint, "NYC1")
 
 	res, err := client.GetFirewallDetail("6cbf5e4c-6256-4f37-80b2-7cdab7d0ac1c")
 	if err != nil {
