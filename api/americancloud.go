@@ -8,12 +8,16 @@ import (
 	"net/http"
 )
 
+// https://app.americancloud.com/api/documentation
 type IAmericanCloudClient interface {
 	ListClusters() ([]byte, error)
 	CreateCluster(args AmericanCloudCreateClusterArgs) ([]byte, error)
 	GetCluster(clusterName string) ([]byte, error)
 	GetClusterKubeconfig(clusterName string) ([]byte, error)
 	DeleteCluster(clusterName string) ([]byte, error)
+
+	GetNetwork(networkName string) ([]byte, error)
+	DeleteNetwork(networkName string) ([]byte, error)
 }
 
 type AmericanCloudClient struct {
@@ -112,6 +116,26 @@ func (cl *AmericanCloudClient) GetClusterKubeconfig(clusterName string) ([]byte,
 
 func (cl *AmericanCloudClient) DeleteCluster(clusterName string) ([]byte, error) {
 	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/cluster/"+clusterName, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *AmericanCloudClient) GetNetwork(networkName string) ([]byte, error) {
+	request, err := http.NewRequest("GET", cl.APIEndpoint+"/network/"+networkName, nil)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set("Authorization", "Bearer "+cl.APIToken)
+
+	return cl.doHttpRequest(request)
+}
+
+func (cl *AmericanCloudClient) DeleteNetwork(networkName string) ([]byte, error) {
+	request, err := http.NewRequest("DELETE", cl.APIEndpoint+"/network/"+networkName, nil)
 	if err != nil {
 		return nil, err
 	}

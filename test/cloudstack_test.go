@@ -147,6 +147,23 @@ func TestCreateCloudStackSSHKeypair(t *testing.T) {
 	t.Log(resp.Privatekey)
 }
 
+// go test ./test -v -run ^TestDeleteCloudStackSSHKeypair$
+func TestDeleteCloudStackSSHKeypair(t *testing.T) {
+	apiUrl := os.Getenv("CLOUDSTACK_API_URL")
+	apiKey := os.Getenv("CLOUDSTACK_API_KEY")
+	secret := os.Getenv("CLOUDSTACK_SECRET")
+
+	cs := cloudstack.NewAsyncClient(apiUrl, apiKey, secret, true)
+	params := cloudstack.DeleteSSHKeyPairParams{}
+	params.SetName("test-preset-ttcl-keypair")
+	resp, err := cs.SSH.DeleteSSHKeyPair(&params)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(resp)
+}
+
 // go test ./test -v -run ^TestGetListAffinityGroups$
 func TestGetListAffinityGroups(t *testing.T) {
 	apiUrl := os.Getenv("CLOUDSTACK_API_URL")

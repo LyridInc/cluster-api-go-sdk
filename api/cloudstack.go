@@ -7,6 +7,7 @@ import (
 type ICloudStackClient interface {
 	ListPublicIpAddresses(zoneID, state string) (*cloudstack.ListPublicIpAddressesResponse, error)
 	CreateSSHKeypair(keypairName string) (*cloudstack.CreateSSHKeyPairResponse, error)
+	DeleteSSHKeypair(keypairName string) (*cloudstack.DeleteSSHKeyPairResponse, error)
 	GetZoneByID(zoneID string) (*cloudstack.Zone, error)
 	ListAffinityGroups() (*cloudstack.ListAffinityGroupsResponse, error)
 	GetAffinityGroupsByDomainId(domainId string) (*cloudstack.ListAffinityGroupsResponse, error)
@@ -46,6 +47,12 @@ func (cl *CloudStackClient) CreateSSHKeypair(keypairName string) (*cloudstack.Cr
 	params := cloudstack.CreateSSHKeyPairParams{}
 	params.SetName(keypairName)
 	return cl.Client.SSH.CreateSSHKeyPair(&params)
+}
+
+func (cl *CloudStackClient) DeleteSSHKeypair(keypairName string) (*cloudstack.DeleteSSHKeyPairResponse, error) {
+	params := cloudstack.DeleteSSHKeyPairParams{}
+	params.SetName(keypairName)
+	return cl.Client.SSH.DeleteSSHKeyPair(&params)
 }
 
 func (cl *CloudStackClient) GetZoneByID(zoneID string) (*cloudstack.Zone, error) {

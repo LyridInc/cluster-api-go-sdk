@@ -64,7 +64,7 @@ func TestCreateCluster(t *testing.T) {
 	res, err := client.CreateCluster(api.AmericanCloudCreateClusterArgs{
 		Name:             "lyrid-test",
 		Project:          "handoyo-sutanto-5551290",
-		Zone:             "us-west-0",
+		Zone:             "us-west-0a",
 		Version:          "1.25.0",
 		NodeSize:         1,
 		Package:          "Scale ACKS",
