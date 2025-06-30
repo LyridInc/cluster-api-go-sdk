@@ -55,6 +55,12 @@ type (
 		ControlPlaneMachineCount    int64
 		URL                         string
 		AffinityGroupId             string
+		Gateway                     string
+		Netmask                     string
+		NetworkOffering             string
+		VpcName                     string
+		VpcCidr                     string
+		VpcOffering                 string
 	}
 
 	GenerateAwsWorkloadClusterOption struct {

@@ -357,6 +357,13 @@ func (c *ClusterApiClient) GenerateCloudStackWorkloadClusterYaml(opt option.Gene
 	os.Setenv("CLOUDSTACK_TEMPLATE_NAME", opt.TemplateName)
 	os.Setenv("CLOUDSTACK_SSH_KEY_NAME", opt.SshKeyName)
 	os.Setenv("CLOUDSTACK_AFFINITY_GROUP_ID", opt.AffinityGroupId)
+	os.Setenv("CLOUDSTACK_VPC_NETWORK_NAME_WITH_CUSTOM_OFFERING", opt.NetworkName)
+	os.Setenv("CLOUDSTACK_CUSTOM_VPC_NETWORK_OFFERING_NAME", opt.NetworkOffering)
+	os.Setenv("CLOUDSTACK_VPC_CIDR", opt.VpcCidr)
+	os.Setenv("CLOUDSTACK_VPC_NAME_WITH_CUSTOM_OFFERING", opt.VpcName)
+	os.Setenv("CLOUDSTACK_CUSTOM_VPC_OFFERING_NAME", opt.VpcOffering)
+	os.Setenv("CLOUDSTACK_GATEWAY", opt.Gateway)
+	os.Setenv("CLOUDSTACK_NETMASK", opt.Netmask)
 
 	templateOptions := client.GetClusterTemplateOptions{
 		Kubeconfig: client.Kubeconfig{

@@ -40,7 +40,7 @@ func TestGetListPublicIPAddresses(t *testing.T) {
 // go test ./test -v -run ^TestGenerateCloudStackClusterTemplate$
 func TestGenerateCloudStackClusterTemplate(t *testing.T) {
 	infrastructure := "cloudstack"
-	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/lyrid-staging.kubeconfig")
 
 	ready, err := capi.InfrastructureReadiness(infrastructure)
 	if !ready && err == nil {
@@ -78,7 +78,7 @@ func TestGenerateCloudStackClusterTemplate(t *testing.T) {
 
 	t.Log("Zone:", zone.Name)
 
-	clusterName := "capc-test"
+	clusterName := "customvpc-test"
 	clusterOpt := option.GenerateCloudStackWorkloadClusterOption{
 		ZoneName:                    zone.Name,
 		NetworkName:                 fmt.Sprintf("%s-network", clusterName),
@@ -89,11 +89,13 @@ func TestGenerateCloudStackClusterTemplate(t *testing.T) {
 		TemplateName:                "KUBE Ubuntu 20.04 CAPI",
 		SshKeyName:                  "azhary-keypair",
 		ClusterName:                 clusterName,
-		Namespace:                   "capc",
-		KubernetesVersion:           "v1.27.3",
+		Namespace:                   "default",
+		KubernetesVersion:           "v1.31.1",
 		WorkerMachineCount:          1,
 		ControlPlaneMachineCount:    1,
-		URL:                         "./data/cloudstack/cluster-template.yaml",
+		URL:                         "./data/cloudstack/cluster-managed-ssh-cloudstack-template-affinity.yaml",
+		Gateway:                     "10.1.32.1",
+		Netmask:                     "255.255.255.0",
 	}
 	yaml, err := capi.GenerateCloudStackWorkloadClusterYaml(clusterOpt)
 	if err != nil {
