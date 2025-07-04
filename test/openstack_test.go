@@ -180,7 +180,7 @@ func TestUpdateYamlManifest(t *testing.T) {
 	}
 
 	t.Run("update manifest for flannel support", func(t *testing.T) {
-		yamlByte, err := os.ReadFile("./data/cluster-managed-ssh-cloudstack-template.yaml") // workload cluster yaml manifest
+		yamlByte, err := os.ReadFile("./data/custom-openstack-template.yaml") // workload cluster yaml manifest
 		if err != nil {
 			t.Fatal(error.Error(err))
 		}
@@ -188,11 +188,18 @@ func TestUpdateYamlManifest(t *testing.T) {
 
 		yamlResult, _ := cl.UpdateYamlManifest(yaml, option.ManifestOption{
 			ClusterKindSpecOption: option.ClusterKindSpecOption{
-				CidrBlocks: []string{"192.168.69.0/24"},
+				CidrBlocks: []string{"10.244.0.0/16"},
 			},
-			// InfrastructureKindSpecOption: option.InfrastructureKindSpecOption{
-			// 	AllowAllInClusterTraffic: true,
-			// },
+			InfrastructureKindSpecOption: option.InfrastructureKindSpecOption{
+				// AllowAllInClusterTraffic: true,
+				// NodeCidr: "1.1.1.1/24",
+				ManagedSubnets: []option.ManagedSubnet{
+					{
+						Cidr:           "1.1.1.1/24",
+						DnsNameServers: []string{"8.8.8.8"},
+					},
+				},
+			},
 		})
 		if err := os.WriteFile("./data/capi-local-flannel.yaml", []byte(yamlResult), 0644); err != nil {
 			t.Fatal("Write yaml error:", error.Error(err))

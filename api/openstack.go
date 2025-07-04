@@ -737,10 +737,10 @@ func UpdateUnstructuredObject(unstructuredObj *unstructured.Unstructured, opt op
 		if strings.HasPrefix(apiVersion, "infrastructure.cluster.x-k8s.io") && kind == "OpenStackCluster" {
 			infrastructureSpec := yamlmodel.InfrastructureSpec{}
 			json.Unmarshal(specByte, &infrastructureSpec)
-			if opt.InfrastructureKindSpecOption.NodeCidr != "" {
-				infrastructureSpec.NodeCidr = opt.InfrastructureKindSpecOption.NodeCidr
+			if len(opt.InfrastructureKindSpecOption.ManagedSubnets) > 0 {
+				infrastructureSpec.ManagedSubnets = opt.InfrastructureKindSpecOption.ManagedSubnets
 			}
-			infrastructureSpec.AllowAllInClusterTraffic = opt.InfrastructureKindSpecOption.AllowAllInClusterTraffic
+			// infrastructureSpec.AllowAllInClusterTraffic = opt.InfrastructureKindSpecOption.AllowAllInClusterTraffic
 			specInterface = infrastructureSpec
 		} else if strings.HasPrefix(apiVersion, "cluster.x-k8s.io") && kind == "Cluster" {
 			clusterSpec := yamlmodel.ClusterSpec{}

@@ -92,8 +92,14 @@ type (
 	}
 
 	InfrastructureKindSpecOption struct {
-		AllowAllInClusterTraffic bool
-		NodeCidr                 string
+		// AllowAllInClusterTraffic bool
+		// NodeCidr string
+		ManagedSubnets []ManagedSubnet
+	}
+
+	ManagedSubnet struct {
+		Cidr           string   `yaml:"cidr" json:"cidr"`
+		DnsNameServers []string `yaml:"dnsNameservers" json:"dnsNameservers"`
 	}
 
 	StorageClassKindOption struct {
