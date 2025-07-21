@@ -216,3 +216,40 @@ func (c *OpenstackK8sClient) GetServerCRD(name, namespace string) (*infrav1alpha
 
 	return crd, nil
 }
+
+func (c *OpenstackK8sClient) AddServerCRDAnnotation(name, namespace, field, value string) (*infrav1alpha1.OpenStackServer, error) {
+	crd, err := c.GetServerCRD(name, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if crd.Annotations == nil {
+		crd.Annotations = map[string]string{}
+	}
+
+	crd.Annotations[field] = value
+	if err := c.K8sClient.Update(context.Background(), crd); err != nil {
+		return nil, fmt.Errorf("Add annotation - Error update OpenStackServer CRD: %v", err)
+	}
+
+	return crd, nil
+}
+
+func (c *OpenstackK8sClient) RemoveServerCRDAnnotation(name, namespace, field string) (*infrav1alpha1.OpenStackServer, error) {
+	crd, err := c.GetServerCRD(name, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	if crd.Annotations == nil {
+		crd.Annotations = map[string]string{}
+	} else {
+		delete(crd.Annotations, field)
+	}
+
+	if err := c.K8sClient.Update(context.Background(), crd); err != nil {
+		return nil, fmt.Errorf("Remove annotation - Error update OpenStackServer CRD: %v", err)
+	}
+
+	return crd, nil
+}
