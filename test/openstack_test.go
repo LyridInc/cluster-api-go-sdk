@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/LyridInc/cluster-api-go-sdk/api"
+	apiv2 "github.com/LyridInc/cluster-api-go-sdk/api/v2"
 	"github.com/LyridInc/cluster-api-go-sdk/model"
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	"github.com/LyridInc/cluster-api-go-sdk/utils"
@@ -1199,4 +1200,97 @@ func TestDeleteKeypairSSH(t *testing.T) {
 
 	b, _ := json.Marshal(response)
 	t.Log(string(b))
+}
+
+// go test ./test -v -run ^TestGetOpenStackClusterCRD$
+func TestGetOpenStackClusterCRD(t *testing.T) {
+	cl, err := apiv2.NewOpenstackK8sClient("./data/capi-management-cluster/capi-management-cluster.kubeconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	crd, err := cl.GetClusterCRD("test-provision-hvjq", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if pausedAnnotation, ok := crd.Annotations["cluster.x-k8s.io/paused"]; ok && pausedAnnotation == "true" {
+		t.Logf("CRD reconcile is paused: %v", pausedAnnotation)
+	} else {
+		t.Log("CRD reconcile is not paused")
+	}
+}
+
+// go test ./test -v -run ^TestRemoveOpenStackClusterCRDAnnotation$
+func TestRemoveOpenStackClusterCRDAnnotation(t *testing.T) {
+	cl, err := apiv2.NewOpenstackK8sClient("./data/capi-management-cluster/capi-management-cluster.kubeconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	field := "cluster.x-k8s.io/paused"
+	crd, err := cl.RemoveClusterCRDAnnotation("test-provision-hvjq", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a", field)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if pausedAnnotation, ok := crd.Annotations[field]; ok {
+		t.Logf("CRD reconcile is paused: %v", pausedAnnotation)
+	} else {
+		t.Log("CRD reconcile is not paused")
+	}
+}
+
+// go test ./test -v -run ^TestAddOpenStackClusterCRDAnnotation$
+func TestAddOpenStackClusterCRDAnnotation(t *testing.T) {
+	cl, err := apiv2.NewOpenstackK8sClient("./data/capi-management-cluster/capi-management-cluster.kubeconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	field := "cluster.x-k8s.io/paused"
+	crd, err := cl.AddClusterCRDAnnotation("test-provision-hvjq", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a", field, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if pausedAnnotation, ok := crd.Annotations[field]; ok {
+		t.Logf("CRD reconcile is paused: %v", pausedAnnotation)
+	} else {
+		t.Log("CRD reconcile is not paused")
+	}
+}
+
+// go test ./test -v -run ^TestGetOpenStackMachineListCRD$
+func TestGetOpenStackMachineListCRD(t *testing.T) {
+	cl, err := apiv2.NewOpenstackK8sClient("./data/capi-management-cluster/capi-management-cluster.kubeconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := cl.GetMachineCRDsByClusterName("test-provision-hvjq", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, machine := range list.Items {
+		t.Log("  -", machine.Name)
+	}
+}
+
+// go test ./test -v -run ^TestGetOpenStackServerListCRD$
+func TestGetOpenStackServerListCRD(t *testing.T) {
+	cl, err := apiv2.NewOpenstackK8sClient("./data/capi-management-cluster/capi-management-cluster.kubeconfig")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := cl.GetServerCRDsByClusterName("test-provision-hvjq", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, server := range list.Items {
+		t.Log("  -", server.Name)
+	}
 }
