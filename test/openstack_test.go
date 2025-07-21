@@ -1263,12 +1263,20 @@ func TestAddOpenStackClusterCRDAnnotation(t *testing.T) {
 
 // go test ./test -v -run ^TestGetOpenStackMachineListCRD$
 func TestGetOpenStackMachineListCRD(t *testing.T) {
-	cl, err := apiv2.NewOpenstackK8sClient("./data/capi-management-cluster/capi-management-cluster.kubeconfig")
+	capi, err := api.NewClusterApiClient("", "./data/capi-management-cluster/capi-management-cluster.kubeconfig")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	list, err := cl.GetMachineCRDsByClusterName("test-provision-hvjq", "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a")
+	clusterName := "test-provision-hvjq"
+	clusterNamespace := "lyrid-9cc8b789-e6df-434a-afbb-371e8280ec1a"
+
+	cl, err := apiv2.NewOpenstackK8sClientFromKubeconfig(capi.ConfigBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	list, err := cl.GetMachineCRDsByClusterName(clusterName, clusterNamespace)
 	if err != nil {
 		t.Fatal(err)
 	}

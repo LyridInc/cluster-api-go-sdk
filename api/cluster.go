@@ -80,6 +80,8 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 		return nil, err
 	}
 
+	kubeconfigBytes, _ := os.ReadFile(kubeconfigFile)
+
 	return &ClusterApiClient{
 		Client:           cl,
 		Clientset:        clientset,
@@ -88,6 +90,7 @@ func NewClusterApiClient(configFile, kubeconfigFile string) (*ClusterApiClient, 
 		ConfigFile:       configFile,
 		KubeconfigFile:   kubeconfigFile,
 		LabelSelector:    nil,
+		ConfigBytes:      kubeconfigBytes,
 	}, nil
 }
 

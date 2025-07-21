@@ -37,6 +37,32 @@ func NewOpenstackK8sClient(kubeconfigPath string) (*OpenstackK8sClient, error) {
 	}, nil
 }
 
+func NewOpenstackK8sClientFromKubeconfig(kubeconfig []byte) (*OpenstackK8sClient, error) {
+	rawConfig, err := clientcmd.Load(kubeconfig)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse kubeconfig: %v", err)
+	}
+
+	clientConfig := clientcmd.NewDefaultClientConfig(*rawConfig, &clientcmd.ConfigOverrides{})
+	cfg, err := clientConfig.ClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("Error BuildConfigFromFlags: %v", err)
+	}
+
+	scheme := runtime.NewScheme()
+	_ = infrav1beta1.AddToScheme(scheme)
+	_ = infrav1alpha1.AddToScheme(scheme)
+
+	k8sClient, err := client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		return nil, fmt.Errorf("Error initializing kubernetes client: %v", err)
+	}
+
+	return &OpenstackK8sClient{
+		K8sClient: k8sClient,
+	}, nil
+}
+
 func (c *OpenstackK8sClient) GetClusterCRD(name, namespace string) (*infrav1beta1.OpenStackCluster, error) {
 	crd := &infrav1beta1.OpenStackCluster{}
 	key := client.ObjectKey{
