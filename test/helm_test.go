@@ -438,3 +438,27 @@ func TestReadHelmChartFromStorage(t *testing.T) {
 
 	defer os.RemoveAll(chartFolder)
 }
+
+// go test ./test -v -run ^TestInstallCoroot$
+func TestInstallCoroot(t *testing.T) {
+	namespace := "lyrid-8f4e3633-470d-4702-ab52-99056641c117"
+	kubeconfig := "./data/konza.kubeconfig"
+	hc, err := api.NewHelmClient(kubeconfig, namespace)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	if hc.AddRepo(repo.Entry{
+		Name: "mittwald",
+		URL:  "https://helm.mittwald.de",
+	}); err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	release, err := hc.Install("mittwald/kubernetes-replicator", "kubernetes-replicator", "", namespace, nil, false)
+	if err != nil {
+		t.Fatal(error.Error(err))
+	}
+
+	t.Log(release)
+}

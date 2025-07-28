@@ -25,7 +25,7 @@ import (
 
 // go test ./test -v -run ^TestGenerateClusterTemplate$
 func TestGenerateClusterTemplate(t *testing.T) {
-	yamlByte, _ := os.ReadFile("./data/elitery-clouds.yaml")
+	yamlByte, _ := os.ReadFile("./data/servercore/clouds-ke-1.yaml")
 	cloudsYaml := model.CloudsYaml{}
 	cloudsYaml.Parse(yamlByte)
 	opt := option.OpenstackGenerateClusterOptions{
@@ -34,14 +34,14 @@ func TestGenerateClusterTemplate(t *testing.T) {
 		ExternalNetworkId:         "f30c9e3d-757b-43fb-b4e0-da3ab36708a4",
 		ImageName:                 "Ubuntu-22.04-eranyaImage-v1.0",
 		SshKeyName:                "eranya-ssh",
-		DnsNameServers:            "8.8.8.8",
+		DnsNameServers:            "213.148.0.221,213.148.0.222",
 		FailureDomain:             "az-01", // nova/az-01
 		IgnoreVolumeAZ:            true,
 	}
 	cloudsYaml.SetEnvironment(opt)
 
 	infrastructure := "openstack"
-	capi, _ := api.NewClusterApiClient("", "./data/az-vega.kubeconfig")
+	capi, _ := api.NewClusterApiClient("", "./data/capi-management-cluster/capi-management-cluster.kubeconfig")
 
 	clusterName := "capi-elitery"
 	ready, err := capi.InfrastructureReadiness(infrastructure)

@@ -112,13 +112,13 @@ func (c *OpenstackClient) Authenticate(auth OpenstackAuth) (*http.Response, erro
 		}
 	}
 
-	authMap := map[string]interface{}{}
+	authMap := map[string]any{}
 	authByte, _ := json.Marshal(auth)
 	json.Unmarshal(authByte, &authMap)
 
 	if identity, ok := authMap["identity"]; ok {
 		if len(auth.Identity.Methods) > 0 {
-			identityMap := identity.(map[string]interface{})
+			identityMap := identity.(map[string]any)
 			switch auth.Identity.Methods[0] {
 			case "password":
 				delete(identityMap, "application_credential")
@@ -131,7 +131,7 @@ func (c *OpenstackClient) Authenticate(auth OpenstackAuth) (*http.Response, erro
 	}
 
 	url := c.AuthEndpoint + "/v3/auth/tokens"
-	b, _ := json.Marshal(map[string]interface{}{
+	b, _ := json.Marshal(map[string]any{
 		"auth": authMap,
 	})
 	requestBody := b
@@ -148,6 +148,10 @@ func (c *OpenstackClient) Authenticate(auth OpenstackAuth) (*http.Response, erro
 		return response, err
 	}
 	defer response.Body.Close()
+
+	log.Println(url)
+	log.Println(string(requestBody))
+	log.Println(response)
 
 	for key, value := range response.Header {
 		if key == "X-Subject-Token" && len(value) > 0 {

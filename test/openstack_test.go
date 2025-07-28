@@ -21,7 +21,7 @@ func TestClientCredentialAuthentication(t *testing.T) {
 	cl := api.OpenstackClient{
 		NetworkEndpoint: os.Getenv("OS_NETWORK_ENDPOINT"),
 		AuthEndpoint:    os.Getenv("OS_AUTH_ENDPOINT"),
-		AuthToken:       os.Getenv("OS_TOKEN"),
+		AuthToken:       "",
 		ProjectId:       os.Getenv("OS_PROJECT_ID"),
 	}
 
@@ -57,17 +57,28 @@ func TestClientPasswordAuthentication(t *testing.T) {
 		ProjectId:       os.Getenv("OS_PROJECT_ID"),
 	}
 
+	domain := map[string]any{
+		"name": "447872",
+	}
+	projectName := "Lyrid Development"
+
 	credential := api.OpenstackAuth{
 		Identity: api.OpenstackIdentity{
 			Methods: []string{"password"},
 			Password: api.OpenstackPassword{
-				User: map[string]interface{}{
+				User: map[string]any{
 					"name":     os.Getenv("OS_USERNAME"),
 					"password": os.Getenv("OS_PASSWORD"),
 					"domain": map[string]string{
-						"id": os.Getenv("OS_USER_DOMAIN_NAME"),
+						"name": os.Getenv("OS_USER_DOMAIN_NAME"),
 					},
 				},
+			},
+		},
+		Scope: &api.OpenstackScope{
+			Project: &api.OpenstackProject{
+				Name:   &projectName,
+				Domain: &domain,
 			},
 		},
 	}

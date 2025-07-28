@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/LyridInc/cluster-api-go-sdk/option"
 	"gopkg.in/yaml.v2"
@@ -174,7 +175,9 @@ func (y *CloudsYaml) SetEnvironment(options option.OpenstackGenerateClusterOptio
 		os.Setenv("OPENSTACK_SSH_KEY_NAME", options.SshKeyName)
 	}
 	if options.DnsNameServers != "" {
-		os.Setenv("OPENSTACK_DNS_NAMESERVERS", options.DnsNameServers)
+		dnsNameServers := strings.Split(options.DnsNameServers, ",")
+		dnsServersString := strings.Join(dnsNameServers, "\n    - ")
+		os.Setenv("OPENSTACK_DNS_NAMESERVERS", dnsServersString)
 	}
 	if options.FailureDomain != "" {
 		os.Setenv("OPENSTACK_FAILURE_DOMAIN", options.FailureDomain)
