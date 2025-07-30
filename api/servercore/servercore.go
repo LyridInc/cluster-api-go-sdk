@@ -35,13 +35,20 @@ func (cl *ServercoreClient) doHttpRequest(request *http.Request) ([]byte, error)
 		return nil, err
 	}
 
-	if response.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("error %d: resource not found for %s", response.StatusCode, request.URL)
-	}
-
 	defer response.Body.Close()
 
 	b, err := io.ReadAll(response.Body)
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		var apiErr struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
+		if err := json.Unmarshal(b, &apiErr); err != nil {
+			return nil, fmt.Errorf("API error (status %d): %s", response.StatusCode, string(b))
+		}
+		return nil, fmt.Errorf("API error: %s", apiErr.Error.Message)
+	}
 	return b, err
 }
 

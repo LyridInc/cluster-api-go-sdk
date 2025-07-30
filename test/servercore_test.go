@@ -52,3 +52,35 @@ func TestListServercoreClusters(t *testing.T) {
 
 	t.Log(clusterListResp)
 }
+
+// go test ./test -v -run ^TestCreateServercoreCluster$
+func TestCreateServercoreCluster(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	createClusterResp, err := cl.CreateCluster(svcmodel.CreateClusterRequest{
+		Cluster: svcmodel.ClusterRequest{
+			KubeVersion:    "1.32.2",
+			Name:           "test-from-go",
+			PrivateKubeAPI: false,
+			Region:         "ke-1",
+			Zonal:          true,
+			NodeGroups: []svcmodel.NodeGroupRequest{
+				{
+					Count:            1,
+					CPUs:             2,
+					RAMMB:            4096,
+					AvailabilityZone: "ke-1a",
+					VolumeGB:         50,
+					VolumeType:       "universal2.ke-1a",
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(createClusterResp)
+}
