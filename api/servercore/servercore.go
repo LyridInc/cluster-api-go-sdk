@@ -1,4 +1,4 @@
-package api
+package servercore
 
 import (
 	"bytes"
@@ -7,20 +7,23 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/LyridInc/cluster-api-go-sdk/model/servercore"
+	svcmodel "github.com/LyridInc/cluster-api-go-sdk/model/servercore"
 )
 
 type ServercoreClient struct {
-	ApiKey      string
-	ApiUrl      string
-	CloudApiUrl string
+	ApiKey                  string
+	ApiUrl                  string
+	CloudApiUrl             string
+	ManagedKubernetesApiUrl string
+	AuthToken               string
 }
 
-func NewServercoreClient(config servercore.Config) *ServercoreClient {
+func NewServercoreClient(config svcmodel.Config) *ServercoreClient {
 	return &ServercoreClient{
-		ApiKey:      config.ApiKey,
-		ApiUrl:      config.ApiUrl,
-		CloudApiUrl: config.CloudApiUrl,
+		ApiKey:                  config.ApiKey,
+		ApiUrl:                  config.ApiUrl,
+		CloudApiUrl:             config.CloudApiUrl,
+		ManagedKubernetesApiUrl: config.ManagedKubernetesApiUrl,
 	}
 }
 
@@ -42,23 +45,23 @@ func (cl *ServercoreClient) doHttpRequest(request *http.Request) ([]byte, error)
 	return b, err
 }
 
-func (cl *ServercoreClient) Authenticate() (*servercore.AuthResponse, string, error) {
+func (cl *ServercoreClient) Authenticate(authConfig svcmodel.AuthConfig) (*svcmodel.AuthResponse, string, error) {
 	authPayload := map[string]any{
 		"auth": map[string]any{
 			"identity": map[string]any{
 				"methods": []string{"password"},
 				"password": map[string]any{
 					"user": map[string]any{
-						"name":     "lyrid-integration",
-						"domain":   map[string]string{"name": "447872"},
-						"password": `-L#^B~7k,."|Z/0?]hj?`,
+						"name":     authConfig.Username,
+						"domain":   map[string]string{"name": authConfig.Domain},
+						"password": authConfig.Password,
 					},
 				},
 			},
 			"scope": map[string]any{
 				"project": map[string]any{
-					"name":   "My First Project",
-					"domain": map[string]string{"name": "447872"},
+					"name":   authConfig.ProjectName,
+					"domain": map[string]string{"name": authConfig.Domain},
 				},
 			},
 		},
@@ -88,12 +91,13 @@ func (cl *ServercoreClient) Authenticate() (*servercore.AuthResponse, string, er
 		return nil, "", err
 	}
 
-	authResponse := servercore.AuthResponse{}
+	authResponse := svcmodel.AuthResponse{}
 	if err := json.Unmarshal(body, &authResponse); err != nil {
 		return nil, "", err
 	}
 
 	token := resp.Header.Get("X-Subject-Token")
+	cl.AuthToken = token
 
 	return &authResponse, token, nil
 }
