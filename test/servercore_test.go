@@ -53,6 +53,20 @@ func TestListServercoreClusters(t *testing.T) {
 	t.Log(clusterListResp)
 }
 
+// go test ./test -v -run ^TestGetServercoreClusterByID$
+func TestGetServercoreClusterByID(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	clusterResp, err := cl.GetClusterByID("b78ed91d-9822-4d02-8896-06aecc880f42")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(clusterResp)
+}
+
 // go test ./test -v -run ^TestCreateServercoreCluster$
 func TestCreateServercoreCluster(t *testing.T) {
 	cl, token := setupClient(t)
@@ -83,4 +97,32 @@ func TestCreateServercoreCluster(t *testing.T) {
 	}
 
 	t.Log(createClusterResp)
+}
+
+// go test ./test -v -run ^TestDeleteServercoreClusterByID$
+func TestDeleteServercoreClusterByID(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	clusterResp, err := cl.DeleteClusterByID("687a4e55-4b69-49e4-a365-688a3cfb3651")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(clusterResp)
+}
+
+// go test ./test -v -run ^TestGetServercoreClusterKubeconfig$
+func TestGetServercoreClusterKubeconfig(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	resp, err := cl.GetClusterKubeconfig("687a4e55-4b69-49e4-a365-688a3cfb3651")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(*resp)
 }

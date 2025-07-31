@@ -30,7 +30,29 @@ func (cl *ServercoreClient) GetListClusters() (*svcmodel.ClusterListResponse, er
 	return &clusterListResponse, nil
 }
 
-func (cl *ServercoreClient) CreateCluster(payload svcmodel.CreateClusterRequest) (*svcmodel.CreateClusterResponse, error) {
+func (cl *ServercoreClient) GetClusterByID(clusterId string) (*svcmodel.ClusterResponse, error) {
+	url := cl.ManagedKubernetesApiUrl + "/clusters/" + clusterId
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Auth-Token", cl.AuthToken)
+
+	respBody, err := cl.doHttpRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterResponse := svcmodel.ClusterResponse{}
+	if err := json.Unmarshal(respBody, &clusterResponse); err != nil {
+		return nil, err
+	}
+
+	return &clusterResponse, nil
+}
+
+func (cl *ServercoreClient) CreateCluster(payload svcmodel.CreateClusterRequest) (*svcmodel.ClusterResponse, error) {
 	url := cl.ManagedKubernetesApiUrl + "/clusters"
 	jsonBody, err := json.Marshal(payload)
 	if err != nil {
@@ -49,10 +71,45 @@ func (cl *ServercoreClient) CreateCluster(payload svcmodel.CreateClusterRequest)
 		return nil, err
 	}
 
-	createClusterResponse := svcmodel.CreateClusterResponse{}
-	if err := json.Unmarshal(respBody, &createClusterResponse); err != nil {
+	clusterResponse := svcmodel.ClusterResponse{}
+	if err := json.Unmarshal(respBody, &clusterResponse); err != nil {
 		return nil, err
 	}
 
-	return &createClusterResponse, nil
+	return &clusterResponse, nil
+}
+
+func (cl *ServercoreClient) DeleteClusterByID(clusterId string) (*any, error) {
+	url := cl.ManagedKubernetesApiUrl + "/clusters/" + clusterId
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Auth-Token", cl.AuthToken)
+
+	_, err = cl.doHttpRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (cl *ServercoreClient) GetClusterKubeconfig(clusterId string) (*string, error) {
+	url := cl.ManagedKubernetesApiUrl + "/clusters/" + clusterId + "/kubeconfig"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Auth-Token", cl.AuthToken)
+
+	resp, err := cl.doHttpRequest(req)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeconfig := string(resp)
+	return &kubeconfig, nil
 }

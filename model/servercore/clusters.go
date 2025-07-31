@@ -18,7 +18,7 @@ type Cluster struct {
 	KubeAPIIP                     string            `json:"kube_api_ip"`
 	KubeVersion                   string            `json:"kube_version"`
 	Region                        string            `json:"region"`
-	AdditionalSoftware            interface{}       `json:"additional_software"` // use a concrete type if structure known
+	AdditionalSoftware            any               `json:"additional_software"`
 	EnableAutorepair              bool              `json:"enable_autorepair"`
 	EnablePatchVersionAutoUpgrade bool              `json:"enable_patch_version_auto_upgrade"`
 	KubernetesOptions             KubernetesOptions `json:"kubernetes_options"`
@@ -47,7 +47,7 @@ type OIDCOptions struct {
 	ProviderName  string `json:"provider_name"`
 }
 
-type CreateClusterResponse struct {
+type ClusterResponse struct {
 	Cluster Cluster `json:"cluster"`
 }
 
@@ -109,7 +109,7 @@ type NodeGroupRequest struct {
 	LocalVolume               bool              `json:"local_volume"`
 	Preemptible               bool              `json:"preemptible"`
 	RAMMB                     int               `json:"ram_mb"`
-	Taints                    []string          `json:"taints"` // Can be a struct if needed
+	Taints                    []string          `json:"taints"`
 	UserData                  string            `json:"user_data"`
 	VolumeGB                  int               `json:"volume_gb"`
 	VolumeType                string            `json:"volume_type"`
