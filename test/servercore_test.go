@@ -18,6 +18,7 @@ func setupClient(t *testing.T) (*svcapi.ServercoreClient, string) {
 		ApiUrl:                  os.Getenv("SERVERCORE_API_URL"),
 		CloudApiUrl:             os.Getenv("SERVERCORE_CLOUD_API_URL"),
 		ManagedKubernetesApiUrl: os.Getenv("SERVERCORE_MANAGED_KUBERNETES_API_URL"),
+		ProjectID:               os.Getenv("SERVERCORE_PROJECT_ID"),
 	})
 
 	_, token, err := cl.Authenticate(svcmodel.AuthConfig{
@@ -125,4 +126,81 @@ func TestGetServercoreClusterKubeconfig(t *testing.T) {
 	}
 
 	t.Log(*resp)
+}
+
+// go test ./test -v -run ^TestListServercoreIPs$
+func TestListServercoreIPs(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	ipListResp, err := cl.GetListIPs()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(ipListResp)
+}
+
+// go test ./test -v -run ^TestListServercoreFloatingIPs$
+func TestListServercoreFloatingIPs(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	ipListResp, err := cl.GetListFloatingIPs()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(ipListResp)
+}
+
+// go test ./test -v -run ^TestListServercoreFloatingIPDetail$
+func TestListServercoreFloatingIPDetail(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	ipResp, err := cl.GetListFloatingIPDetail("eaef37c1-7c63-4079-837d-a0dea9a0e2d8")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(ipResp)
+}
+
+// go test ./test -v -run ^TestCreateServercoreFloatingIP$
+func TestCreateServercoreFloatingIP(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	ipResp, err := cl.CreateFloatingIP(svcmodel.CreateFloatingIPRequest{
+		FloatingIPs: []svcmodel.FloatingIPRequest{
+			{
+				Quantity: 1,
+				Region:   "ke-1",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(ipResp)
+}
+
+// go test ./test -v -run ^TestDeleteServercoreFloatingIP$
+func TestDeleteServercoreFloatingIP(t *testing.T) {
+	cl, token := setupClient(t)
+
+	t.Log(token)
+
+	ipResp, err := cl.DeleteFloatingIPByID("ef20e389-5df3-4827-8075-778fb014c738")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(ipResp)
 }

@@ -12,8 +12,10 @@ import (
 
 type ServercoreClient struct {
 	ApiKey                  string
+	ApiUrl                  string
 	CloudApiUrl             string
 	ManagedKubernetesApiUrl string
+	ProjectID               string
 	AuthToken               string
 }
 
@@ -21,7 +23,9 @@ func NewServercoreClient(config svcmodel.Config) *ServercoreClient {
 	return &ServercoreClient{
 		ApiKey:                  config.ApiKey,
 		CloudApiUrl:             config.CloudApiUrl,
+		ApiUrl:                  config.ApiUrl,
 		ManagedKubernetesApiUrl: config.ManagedKubernetesApiUrl,
+		ProjectID:               config.ProjectID,
 	}
 }
 

@@ -5,4 +5,5 @@ type Config struct {
 	ApiUrl                  string
 	CloudApiUrl             string
 	ManagedKubernetesApiUrl string
+	ProjectID               string
 }
